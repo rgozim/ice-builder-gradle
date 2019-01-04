@@ -12,7 +12,9 @@ import org.gradle.api.NamedDomainObjectContainer
 
 class SliceExtension {
 
-    final NamedDomainObjectContainer<Java> java;
+    final NamedDomainObjectContainer<Java> java
+
+    final NamedDomainObjectContainer<Python> python
 
     private def iceHome = null
     private def iceVersion = null
@@ -278,8 +280,9 @@ class SliceExtension {
         }
     }
 
-    SliceExtension(java) {
+    SliceExtension(java, python) {
         this.java = java
+        this.python = python
     }
 
     def java(Closure closure) {
@@ -287,6 +290,14 @@ class SliceExtension {
             java.configure(closure)
         } catch(MissingPropertyException ex) {
             java.create('default', closure)
+        }
+    }
+
+    def python(Closure closure) {
+        try {
+            python.configure(closure)
+        } catch(MissingPropertyException ex) {
+            python.create('default', closure)
         }
     }
 
