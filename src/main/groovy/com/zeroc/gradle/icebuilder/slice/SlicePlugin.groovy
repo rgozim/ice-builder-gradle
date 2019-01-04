@@ -19,20 +19,20 @@ class SlicePlugin implements Plugin<Project> {
         }
 
         // Create and install the extension object.
-        project.extensions.create("slice", SliceExtension, project.container(Java))
-        project.extensions.slice.extensions.create("freezej",
-                                                   Freezej,
-                                                   project.container(Dict),
-                                                   project.container(Index))
+        def slice = project.extensions.create("slice", SliceExtension,
+                project.container(Java), project.container(Python))
 
-        project.slice.output = project.file("${project.buildDir}/generated-src")
+        slice.extensions.create("freezej", Freezej,
+                project.container(Dict), project.container(Index))
+
+        slice.output = project.file("${project.buildDir}/generated-src")
 
         project.afterEvaluate {
             if (isAndroidProject(project)) {
                 // Android projects do not define a 'compileJava' task. We wait until the project is evaluated
                 // and add our dependency to the variant's javaCompiler task.
                 getAndroidVariants(project).all { variant ->
-                    variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), project.slice.output)
+                    variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
                 }
             } else {
                 project.tasks.getByName("compileJava").dependsOn('compileSlice');
@@ -48,6 +48,6 @@ class SlicePlugin implements Plugin<Project> {
     def getAndroidVariants(Project project) {
         // https://sites.google.com/a/android.com/tools/tech-docs/new-build-system/user-guide
         return project.android.hasProperty('libraryVariants') ?
-            project.android.libraryVariants : project.android.applicationVariants
+                project.android.libraryVariants : project.android.applicationVariants
     }
 }

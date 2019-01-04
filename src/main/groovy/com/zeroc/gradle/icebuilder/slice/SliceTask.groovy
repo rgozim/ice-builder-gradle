@@ -361,6 +361,27 @@ class SliceTask extends DefaultTask {
         }
     }
 
+    def processPython() {
+        project.slice.java.each {
+            it.args = it.args.stripIndent()
+
+            if (it.files == null) {
+                it.files = project.fileTree(dir: it.srcDir).include('**/*.ice')
+            }
+
+            it.files.each {
+                if(files.contains(it)) {
+                    throw new GradleException("${it}: input file specified in multiple source sets")
+                }
+                files.add(it)
+            }
+
+            if(!it.files.isEmpty()) {
+                s2jDependencies << getS2JDependencies(it)
+            }
+        }
+    }
+
     def processJava() {
         // Dictionary of A->[B] where A is a slice file and B is the list of generated
         // source files.
