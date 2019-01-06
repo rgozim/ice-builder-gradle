@@ -362,7 +362,7 @@ class SliceTask extends DefaultTask {
     }
 
     def processPython() {
-        project.slice.java.each {
+        project.slice.python.each {
             it.args = it.args.stripIndent()
 
             if (it.files == null) {

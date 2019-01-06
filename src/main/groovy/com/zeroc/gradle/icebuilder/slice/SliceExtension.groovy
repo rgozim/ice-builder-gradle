@@ -228,6 +228,10 @@ class SliceExtension {
             }
         }
 
+        def getSlice2py(iceHome) {
+            return getSliceCompiler("slice2py", iceHome)
+        }
+
         def getSlice2java(iceHome) {
             return getSliceCompiler("slice2java", iceHome)
         }

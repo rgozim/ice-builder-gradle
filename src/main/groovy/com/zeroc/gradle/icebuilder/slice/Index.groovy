@@ -5,7 +5,7 @@
 package com.zeroc.gradle.icebuilder.slice;
 
 class Index {
-    def name
+    final name
     def javaType
     def type
     def member
