@@ -7,7 +7,7 @@
 package com.zeroc.gradle.icebuilder.slice;
 
 class Dict {
-    def name
+    final name
     def javaType
     def key
     def value
