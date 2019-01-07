@@ -1,13 +1,24 @@
 package com.zeroc.gradle.icebuilder.slice
 
-class Python {
-    final name
-    def args = ""
-    def files
-    def srcDir = "src/main/slice"
-    def include
+import org.gradle.api.Project
+import org.gradle.api.file.FileCollection
 
-    Python(name) {
+class Python extends Input {
+    final String name
+
+    final Project project
+
+    String args
+
+    FileCollection files
+
+    FileCollection include
+
+    File srcDir
+
+    Python(name, project) {
         this.name = name
+        this.project = project
+        this.srcDir = project.file("src/main/slice")
     }
 }
