@@ -51,6 +51,7 @@ class SliceTask extends DefaultTask {
             project.slice.java.create("default")
         }
 
+        processPython()
         processJava()
         processFreezeJ()
     }
@@ -365,24 +366,139 @@ class SliceTask extends DefaultTask {
     }
 
     def processPython() {
+        // Dictionary of A->[B] where A is a slice file and B is the list of generated
+        // source files.
+        def generated = [:]
+
+        // Dictionary of A->[B] where A is the source set name and B is
+        // the JavaSourceSet
+        def sourceSet = [:]
+
+        // Set of slice files processed.
+        Set built = []
+
         // Complete set of slice files.
         Set files = []
 
+        // Dictionary of A->[B] where B depends on A for the java task.
+        def s2jDependencies = [:]
+
         project.slice.python.each {
             it.args = it.args.stripIndent()
-
             it.files.each {
                 if(files.contains(it)) {
                     throw new GradleException("${it}: input file specified in multiple source sets")
                 }
                 files.add(it)
             }
-
             if(!it.files.isEmpty()) {
-                s2jDependencies << getS2JDependencies(it)
+                s2jDependencies << getS2PDeps(it)
             }
         }
+
+        project.slice.python.each {
+            processJavaSet(it, s2jDependencies, state, generated, built, sourceSet)
+        }
     }
+
+    def buildS2PCommandLine(Python python) {
+        def command = []
+        command.add(project.slice.slice2py)
+        if (project.slice.sliceDir) {
+            command.add("-I${project.slice.sliceDir}")
+        }
+        python.include.each { command.add('-I' + it) }
+        python.args.split().each { command.add(it) }
+        return command
+    }
+
+    // Executes slice2java to determine the slice file dependencies.
+    // Returns a dictionary of A  -> [B] where A depends on B.
+    def getS2PDeps(python) {
+        def command = buildS2PCommandLine(python)
+        command.add("--depend-xml")
+        python.files.each {
+            command.add(it.getAbsolutePath() )
+        }
+
+        LOGGER.info("processing dependencies:\n${command}")
+
+        def sout = new StringBuffer()
+        def serr = new StringBuffer()
+
+        def p = command.execute(project.slice.env, null)
+        p.waitForProcessOutput(sout, serr)
+
+        printWarningsAndErrors(serr)
+
+        if (p.exitValue() != 0) {
+            throw new GradleException("${command[0]} failed with exit code: ${p.exitValue()}")
+        }
+
+        LOGGER.info("processing dependencies:\n${command}")
+
+        return parseSliceDependencyXML(new XmlSlurper().parseText(sout.toString()))
+    }
+
+    def processPythonSet(Python python, LinkedHashMap s2jDependencies, state, generated, built, sourceSet) {
+        def ss = new JavaSourceSet()
+        ss.args = buildS2JCommandLine(python)
+        python.files.each {
+            ss.slice.add(it)
+        }
+        sourceSet[python.name] = ss
+
+        // The JavaSourceSet from the previous build.
+        def prevSS = state.sourceSet[python.name]
+
+        Set toBuild = []
+
+        // If the source set is new, the sourceSet arguments are different,
+        // or the slice2java compiler (always the first argument) has been updated,
+        // then rebuild all slice files.
+        if(prevSS == null || ss.args != prevSS.args || getTimestamp(new File(ss.args[0])) > state.timestamp) {
+            python.files.each {
+                toBuild.add(it)
+            }
+        } else {
+            // s2jDependencies is populated in getInputFiles.
+            python.files.each { sliceFile ->
+                // Build the slice file if it wasn't built before in this source set,
+                // or its timestamp is newer than the last build time,
+                // or any of its dependencies have a timestamp newer than the last build time.
+                if(!prevSS.slice.contains(sliceFile) || (getTimestamp(sliceFile) > state.timestamp) ||
+                        s2jDependencies[sliceFile].any { dependency ->
+                            getTimestamp(dependency) > state.timestamp
+                        }) {
+                    toBuild.add(sliceFile)
+                }
+                //
+                // Check that any previously generated files still exist
+                //
+                else if(state.slice[sliceFile] != null && state.slice[sliceFile].any { generatedFile ->
+                    !generatedFile.isFile() || getTimestamp(generatedFile) > state.timestamp
+                }) {
+                    toBuild.add(sliceFile)
+                }
+            }
+        }
+
+        // Bail out if there is nothing to do (in theory this should not occur)
+        if(toBuild.isEmpty()) {
+            LOGGER.info("nothing to do")
+            return
+        }
+
+        LOGGER.info("running slice2java on the following slice files")
+        toBuild.each {
+            LOGGER.info("    ${it}")
+        }
+
+        // Update the set of java source files generated and the slice files processed.
+        generated << executeS2J(python, toBuild)
+        built.addAll(toBuild)
+    }
+
 
     def processJava() {
         // Dictionary of A->[B] where A is a slice file and B is the list of generated
@@ -577,7 +693,7 @@ class SliceTask extends DefaultTask {
     // and B is the list of produced java source files.
     def executeS2J(java, files) {
         def command = buildS2JCommandLine(java)
-        command.add("--list-generated")
+        // command.add("--list-generated")
         command.add("--output-dir=" + project.slice.output.getAbsolutePath())
         files.each {
             command.add(it.getAbsolutePath())

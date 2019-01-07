@@ -16,13 +16,15 @@ class SlicePlugin implements Plugin<Project> {
     private static final def LOGGER = Logging.getLogger(SliceTask)
 
     void apply(Project project) {
-        def compileSlice = project.tasks.create('compileSlice', SliceTask) {
+        project.tasks.create('compileSlice', SliceTask) {
             group = "Slice"
         }
 
         // Create and install the extension object.
         def slice = project.extensions.create("slice", SliceExtension,
-                project.container(Java), project.container(Python))
+                project.container(Java),
+                project.container(Python, { name -> new Python(name, project) })
+        )
 
         // slice.extensions.add("python", project.container(Python))
 
@@ -40,11 +42,13 @@ class SlicePlugin implements Plugin<Project> {
                 }
             }
         } else {
-            def compileJava = project.tasks.getByName("compileJava")
-            if (compileJava) {
-                compileJava.dependsOn('compileSlice')
+//            project.sourceSets.main.java.srcDir slice.output
+            project.afterEvaluate {
+                def compileJava = project.tasks.getByName("compileJava")
+                if (compileJava) {
+                    compileJava.dependsOn('compileSlice')
+                }
             }
-            project.sourceSets.main.java.srcDir compileSlice.output
         }
     }
 
