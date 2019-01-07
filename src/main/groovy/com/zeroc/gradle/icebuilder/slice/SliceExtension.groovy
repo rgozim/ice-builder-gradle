@@ -20,6 +20,7 @@ class SliceExtension {
     private def srcDist = false
     private def freezeHome = null
     private def sliceDir = null
+    private def slice2py = null
     private def slice2java = null
     private def slice2freezej = null
     private def jarDir = null
@@ -41,6 +42,7 @@ class SliceExtension {
         def _srcDist = false
         def _freezeHome = null
         def _sliceDir = null
+        def _slice2py = null
         def _slice2java = null
         def _slice2freezej = null
         def _jarDir = null
@@ -61,6 +63,7 @@ class SliceExtension {
 
             if(_iceHome != null) {
                 _srcDist = new File([_iceHome, "java", "build.gradle"].join(File.separator)).exists()
+                _slice2py = getSlice2py(_iceHome)
                 _slice2java = getSlice2java(_iceHome)
 
                 //
@@ -330,6 +333,7 @@ class SliceExtension {
         srcDist = c._srcDist
         freezeHome = c._freezeHome
         sliceDir = c._sliceDir
+        slice2py = c._slice2py
         slice2java = c._slice2java
         slice2freezej = c._slice2freezej
         jarDir = c._jarDir
@@ -343,6 +347,7 @@ class SliceExtension {
         LOGGER.debug("Property: srcDist = ${srcDist}")
         LOGGER.debug("Property: freezeHome = ${freezeHome}")
         LOGGER.debug("Property: sliceDir = ${sliceDir}")
+        LOGGER.debug("Property: slice2py = ${slice2py}")
         LOGGER.debug("Property: slice2java = ${slice2java}")
         LOGGER.debug("Property: slice2freezej = ${slice2freezej}")
         LOGGER.debug("Property: jarDir = ${jarDir}")
