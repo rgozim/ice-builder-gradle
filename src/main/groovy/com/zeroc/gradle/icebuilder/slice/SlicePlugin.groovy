@@ -22,6 +22,8 @@ class SlicePlugin implements Plugin<Project> {
         def slice = project.extensions.create("slice", SliceExtension,
                 project.container(Java), project.container(Python))
 
+        // slice.extensions.add("python", project.container(Python))
+
         slice.extensions.create("freezej", Freezej,
                 project.container(Dict), project.container(Index))
 

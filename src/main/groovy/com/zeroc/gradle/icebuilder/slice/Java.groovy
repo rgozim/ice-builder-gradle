@@ -2,7 +2,7 @@
 // Copyright (c) ZeroC, Inc. All rights reserved.
 //
 
-package com.zeroc.gradle.icebuilder.slice;
+package com.zeroc.gradle.icebuilder.slice
 
 class Java {
     final name

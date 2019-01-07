@@ -5,6 +5,7 @@
 package com.zeroc.gradle.icebuilder.slice
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -362,12 +363,11 @@ class SliceTask extends DefaultTask {
     }
 
     def processPython() {
+        // Complete set of slice files.
+        Set files = []
+
         project.slice.python.each {
             it.args = it.args.stripIndent()
-
-            if (it.files == null) {
-                it.files = project.fileTree(dir: it.srcDir).include('**/*.ice')
-            }
 
             it.files.each {
                 if(files.contains(it)) {
