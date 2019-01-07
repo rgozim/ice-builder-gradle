@@ -397,11 +397,11 @@ class SliceTask extends DefaultTask {
         }
 
         project.slice.python.each {
-            processJavaSet(it, s2jDependencies, state, generated, built, sourceSet)
+            processPythonSet(it, s2jDependencies, state, generated, built, sourceSet)
         }
     }
 
-    def buildS2PCommandLine(Python python) {
+    def buildS2PCommandLine(python) {
         def command = []
         command.add(project.slice.slice2py)
         if (project.slice.sliceDir) {
@@ -412,7 +412,7 @@ class SliceTask extends DefaultTask {
         return command
     }
 
-    // Executes slice2java to determine the slice file dependencies.
+    // Executes slice2python to determine the slice file dependencies.
     // Returns a dictionary of A  -> [B] where A depends on B.
     def getS2PDeps(python) {
         def command = buildS2PCommandLine(python)
@@ -440,9 +440,9 @@ class SliceTask extends DefaultTask {
         return parseSliceDependencyXML(new XmlSlurper().parseText(sout.toString()))
     }
 
-    def processPythonSet(Python python, LinkedHashMap s2jDependencies, state, generated, built, sourceSet) {
+    def processPythonSet(Python python, s2jDependencies, state, generated, built, sourceSet) {
         def ss = new JavaSourceSet()
-        ss.args = buildS2JCommandLine(python)
+        ss.args = buildS2PCommandLine(python)
         python.files.each {
             ss.slice.add(it)
         }
@@ -495,8 +495,33 @@ class SliceTask extends DefaultTask {
         }
 
         // Update the set of java source files generated and the slice files processed.
-        generated << executeS2J(python, toBuild)
+        generated << executeS2P(python, toBuild)
         built.addAll(toBuild)
+    }
+
+    // Run slice2java. Returns a dictionary of A -> [B] where A is a slice file,
+    // and B is the list of produced java source files.
+    def executeS2P(python, files) {
+        def command = buildS2PCommandLine(python)
+        command.add("--output-dir=" + project.slice.output.getAbsolutePath())
+        files.each {
+            command.add(it.getAbsolutePath())
+        }
+
+        LOGGER.info("processing slice:\n${command}")
+
+        def sout = new StringBuffer()
+        def serr = new StringBuffer()
+
+        def p = command.execute(project.slice.env, null)
+        p.waitForProcessOutput(sout, serr)
+
+        printWarningsAndErrors(serr, sout)
+
+        if (p.exitValue() != 0) {
+            throw new GradleException("${command[0]} failed with exit code: ${p.exitValue()}")
+        }
+        return parseGeneratedXML(new XmlSlurper().parseText(sout.toString()))
     }
 
 
@@ -693,7 +718,7 @@ class SliceTask extends DefaultTask {
     // and B is the list of produced java source files.
     def executeS2J(java, files) {
         def command = buildS2JCommandLine(java)
-        // command.add("--list-generated")
+        command.add("--list-generated")
         command.add("--output-dir=" + project.slice.output.getAbsolutePath())
         files.each {
             command.add(it.getAbsolutePath())
