@@ -4,15 +4,16 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
-import org.gradle.api.tasks.AbstractExecTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.internal.impldep.org.apache.commons.io.FilenameUtils
 
-class PythonTask extends AbstractExecTask {
+class PythonTask extends DefaultTask {
 
     private static final def Log = Logging.getLogger(SliceTask)
 
@@ -22,7 +23,7 @@ class PythonTask extends AbstractExecTask {
     @OutputDirectory
     File outputDir
 
-    @Input
+    @InputFiles
     @Optional
     FileCollection includeDirs
 
@@ -30,51 +31,53 @@ class PythonTask extends AbstractExecTask {
     @Optional
     String prefix
 
-    PythonTask() {
-        super(PythonTask.class)
-    }
+    // Change this to a configuration
+    SliceExtension sliceExt = project.slice
 
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
         if (!inputs.incremental)
             project.delete(outputDir.listFiles())
 
-        def cmd = buildCommand()
+        List<File> files = []
         inputs.outOfDate { change ->
-            cmd.add("$change.file")
+            if (change.file.isFile()) {
+                Log.info("$change.file")
+                files.add(change.file)
+            }
+        }
+
+        if (!files.isEmpty()) {
+            List cmd = [sliceExt.slice2py, "-I${sliceExt.sliceDir}", "-I${inputDir}"]
+            files.each { file ->
+                cmd.add(file.getAbsoluteFile())
+            }
+            if (prefix) {
+                cmd.add("--prefix=${prefix}")
+            }
+            cmd.add("--output-dir=${outputDir}")
             executeCommand(cmd)
         }
-    }
 
-
-
-    List buildCommand() {
-        // Change this to a configuration
-        SliceExtension sliceExt = project.slice
-        List cmd = [
-                sliceExt.slice2py,
-                "--output-dir=$outputDir",
-                "-I${sliceExt.sliceDir}",
-        ]
-        if (includeDirs) {
-            includeDirs.each { dir -> cmd.add("-I${dir}") }
+        inputs.removed { removed ->
+            def extension = FilenameUtils.getExtension(removed.file.name)
+            def filename = FilenameUtils.getBaseName(removed.file.name)
+            if (prefix) {
+                filename = prefix + filename + "_ice"
+            }
+            def targetFile = project.file("$outputDir/${filename}.{$extension}")
+            if (targetFile.exists()) {
+                targetFile.delete()
+            }
         }
-        if (prefix) {
-            cmd.add("--prefix=$prefix")
-        }
-        return cmd
     }
 
     void executeCommand(List cmd) {
-        Log.info("Command: $cmd")
         def sout = new StringBuffer()
-        def serr = new StringBuffer()
-        def p = cmd.execute(project.slice.env, null)
-
-        p.waitForProcessOutput(sout, serr)
+        def p = cmd.execute()
+        p.waitForProcessOutput(sout, System.err)
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }
-        Log.info(sout.toString())
     }
 }
