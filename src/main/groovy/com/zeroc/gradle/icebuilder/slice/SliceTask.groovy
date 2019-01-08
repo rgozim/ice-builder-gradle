@@ -370,35 +370,99 @@ class SliceTask extends DefaultTask {
         // source files.
         def generated = [:]
 
-        // Dictionary of A->[B] where A is the source set name and B is
-        // the JavaSourceSet
-        def sourceSet = [:]
-
         // Set of slice files processed.
         Set built = []
 
         // Complete set of slice files.
         Set files = []
 
+        def stateFile = new File(project.slice.output, "slice2java.df.xml")
+
+        // Dictionary of A->[B] where A is the source set name and B is
+        // the JavaSourceSet
+        def sourceSet = [:]
+
         // Dictionary of A->[B] where B depends on A for the java task.
         def s2jDependencies = [:]
 
+        def state = new JavaBuildState()
+        state.read(stateFile)
+
         project.slice.python.each {
-            it.args = it.args.stripIndent()
+            if (it.args) {
+                it.args = it.args.stripIndent()
+            }
+
+            if (it.files == null) {
+                it.files = project.fileTree(dir: it.srcDir).include('**/*.ice')
+            }
+
             it.files.each {
                 if(files.contains(it)) {
                     throw new GradleException("${it}: input file specified in multiple source sets")
                 }
                 files.add(it)
             }
+
             if(!it.files.isEmpty()) {
-                s2jDependencies << getS2PDeps(it)
+                // s2jDependencies << getS2PDeps(it)
             }
         }
 
         project.slice.python.each {
             processPythonSet(it, s2jDependencies, state, generated, built, sourceSet)
         }
+
+        if(built.isEmpty() && !stateFile.isFile()) {
+            // The state file has never been written and and we have no
+            // files to process. No reason to continue as it will only
+            // write an empty dependency file.
+            LOGGER.info("nothing to do")
+            return
+        }
+
+        // The set of generated files to remove.
+        Set oldGenerated = []
+
+        // Add all of the previously generated files from the slice files that were
+        // just built in processJavaSet.
+        built.each {
+            def d = state.slice[it]
+            if(d != null) {
+                oldGenerated.addAll(d)
+            }
+        }
+
+        // Add to the oldGenerated list the generated files for those slice files
+        // no longer are in any source set.
+        state.slice.each {
+            if(!files.contains(it.key)) {
+                oldGenerated.addAll(it.value)
+            }
+        }
+
+        // Remove all generated files that were just generated in processJavaSet.
+        generated.values().each {
+            oldGenerated.removeAll(it)
+        }
+
+        def newState = new JavaBuildState()
+        newState.timestamp = System.currentTimeMillis()
+        newState.sourceSet = sourceSet
+        // Update the dependencies.
+        built.each {
+            newState.slice[it] = generated[it]
+        }
+        files.each {
+            if(!built.contains(it)) {
+                newState.slice[it] = state.slice[it]
+            }
+        }
+
+        // Write the new dependencies file.
+        newState.write(stateFile)
+
+        deleteFiles(oldGenerated)
     }
 
     def buildS2PCommandLine(python) {
@@ -407,8 +471,12 @@ class SliceTask extends DefaultTask {
         if (project.slice.sliceDir) {
             command.add("-I${project.slice.sliceDir}")
         }
-        python.include.each { command.add('-I' + it) }
-        python.args.split().each { command.add(it) }
+        if (python.include) {
+            python.include.each { command.add('-I' + it) }
+        }
+        if (python.args) {
+            python.args.split().each { command.add(it) }
+        }
         return command
     }
 
@@ -417,30 +485,27 @@ class SliceTask extends DefaultTask {
     def getS2PDeps(python) {
         def command = buildS2PCommandLine(python)
         command.add("--depend-xml")
-        python.files.each {
-            command.add(it.getAbsolutePath() )
-        }
+        python.files.each { command.add(it.getAbsolutePath()) }
 
         LOGGER.info("processing dependencies:\n${command}")
 
         def sout = new StringBuffer()
         def serr = new StringBuffer()
-
         def p = command.execute(project.slice.env, null)
         p.waitForProcessOutput(sout, serr)
+        printWarningsAndErrors(serr, sout)
 
-        printWarningsAndErrors(serr)
+        String out = sout.toString()
+        LOGGER.info("OUTPUT: ${out}")
 
         if (p.exitValue() != 0) {
             throw new GradleException("${command[0]} failed with exit code: ${p.exitValue()}")
         }
 
-        LOGGER.info("processing dependencies:\n${command}")
-
-        return parseSliceDependencyXML(new XmlSlurper().parseText(sout.toString()))
+        return parseSliceDependencyXML(new XmlSlurper().parseText(out))
     }
 
-    def processPythonSet(Python python, s2jDependencies, state, generated, built, sourceSet) {
+    def processPythonSet(python, s2jDependencies, state, generated, built, sourceSet) {
         def ss = new JavaSourceSet()
         ss.args = buildS2PCommandLine(python)
         python.files.each {
@@ -457,9 +522,7 @@ class SliceTask extends DefaultTask {
         // or the slice2java compiler (always the first argument) has been updated,
         // then rebuild all slice files.
         if(prevSS == null || ss.args != prevSS.args || getTimestamp(new File(ss.args[0])) > state.timestamp) {
-            python.files.each {
-                toBuild.add(it)
-            }
+            python.files.each { toBuild.add(it) }
         } else {
             // s2jDependencies is populated in getInputFiles.
             python.files.each { sliceFile ->
@@ -489,7 +552,7 @@ class SliceTask extends DefaultTask {
             return
         }
 
-        LOGGER.info("running slice2java on the following slice files")
+        LOGGER.info("running slice2py on the following slice files")
         toBuild.each {
             LOGGER.info("    ${it}")
         }
@@ -501,9 +564,12 @@ class SliceTask extends DefaultTask {
 
     // Run slice2java. Returns a dictionary of A -> [B] where A is a slice file,
     // and B is the list of produced java source files.
-    def executeS2P(python, files) {
+    def executeS2P(Python python, Set files) {
         def command = buildS2PCommandLine(python)
-        command.add("--output-dir=" + project.slice.output.getAbsolutePath())
+        if (!python.outputDir.exists()) {
+            python.outputDir.mkdir()
+        }
+        command.add("--output-dir=" + python.outputDir.getAbsolutePath())
         files.each {
             command.add(it.getAbsolutePath())
         }
@@ -757,15 +823,16 @@ class SliceTask extends DefaultTask {
         def p = command.execute(project.slice.env, null)
         p.waitForProcessOutput(sout, serr)
 
+        String out = sout.toString()
+        // LOGGER.info("OUTPUT: ${out}")
+
         printWarningsAndErrors(serr)
 
         if (p.exitValue() != 0) {
             throw new GradleException("${command[0]} failed with exit code: ${p.exitValue()}")
         }
 
-        LOGGER.info("processing dependencies:\n${command}")
-
-        return parseSliceDependencyXML(new XmlSlurper().parseText(sout.toString()))
+        return parseSliceDependencyXML(new XmlSlurper().parseText(out))
     }
 
     // Cache of file -> timestamp.
