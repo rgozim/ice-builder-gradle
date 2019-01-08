@@ -8,13 +8,15 @@ class Python {
 
     final Project project
 
-    String args
+    def args
 
-    List include
+    def include
 
-    FileCollection files
+    def files
 
-    File srcDir
+    def srcDir
+
+    File outputDir
 
     Python(name, project) {
         this.name = name

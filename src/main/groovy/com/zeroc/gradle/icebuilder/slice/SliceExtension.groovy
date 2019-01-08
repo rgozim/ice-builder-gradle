@@ -424,6 +424,11 @@ class SliceExtension {
         return sliceDir
     }
 
+    def getSlice2py() {
+        lazyInit()
+        return slice2py
+    }
+
     def getSlice2java() {
         lazyInit()
         return slice2java
