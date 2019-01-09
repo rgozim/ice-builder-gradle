@@ -17,7 +17,7 @@ import static groovy.io.FileType.FILES
 
 class PythonTask extends DefaultTask {
 
-    private static final def Log = Logging.getLogger(SliceTask)
+    private static final def Log = Logging.getLogger(PythonTask)
 
     @InputDirectory
     File inputDir
