@@ -6,7 +6,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -19,19 +18,19 @@ class PythonTask extends DefaultTask {
 
     private static final def Log = Logging.getLogger(PythonTask)
 
-    @InputDirectory
-    File inputDir
+    @InputFiles
+    FileCollection inputFiles
 
     @OutputDirectory
     File outputDir
 
-    @InputFiles
-    @Optional
-    FileCollection includeDirs
-
     @Input
     @Optional
     String prefix
+
+    @Input
+    @Optional
+    List<String> includeDirs
 
     // Change this to a configuration
     SliceExtension sliceExt = project.slice
@@ -39,7 +38,7 @@ class PythonTask extends DefaultTask {
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
         if (!inputs.incremental) {
-            inputDir.traverse(type: FILES) { file ->
+            inputFiles.each { file ->
                 deleteOutputFile(file)
             }
         }
@@ -47,6 +46,9 @@ class PythonTask extends DefaultTask {
         List filesForProcessing = []
         inputs.outOfDate { change ->
             if (change.file.directory) return
+
+            // Log which file will be included in slice2py
+            Log.info("File for processing: $change.file")
 
             // Add input file for processing
             filesForProcessing.add("${change.file}")
