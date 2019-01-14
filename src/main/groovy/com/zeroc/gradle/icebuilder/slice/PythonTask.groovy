@@ -12,8 +12,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
-import static groovy.io.FileType.FILES
-
 class PythonTask extends DefaultTask {
 
     private static final def Log = Logging.getLogger(PythonTask)
@@ -30,7 +28,7 @@ class PythonTask extends DefaultTask {
 
     @Input
     @Optional
-    List<String> includeDirs
+    FileCollection includeDirs
 
     // Change this to a configuration
     SliceExtension sliceExt = project.slice
@@ -58,7 +56,7 @@ class PythonTask extends DefaultTask {
             List cmd = [sliceExt.slice2py, "-I${sliceExt.sliceDir}"]
 
             if (includeDirs) {
-                // Add any additional include dirs
+                // Add any additional includes
                 includeDirs.each { dir -> cmd.add("-I${dir}") }
             }
 
@@ -80,6 +78,70 @@ class PythonTask extends DefaultTask {
 
             deleteOutputFile(change.file)
         }
+    }
+
+    void inputFiles(Object... files) {
+        setInputFiles(files)
+    }
+
+    void inputFiles(FileCollection collection) {
+        setInputFiles(collection)
+    }
+
+    void setInputFiles(FileCollection collection) {
+        if (inputFiles) {
+            inputFiles = inputFiles + collection
+        } else {
+            inputFiles = collection
+        }
+    }
+
+    void setInputFiles(Object... files) {
+        setInputFiles(project.files(files))
+    }
+
+    void includeDirs(FileCollection collection) {
+        setIncludeDirs(collection)
+    }
+
+    void includeDirs(Object... paths) {
+        setIncludeDirs(paths)
+    }
+
+    void setIncludeDirs(FileCollection collection) {
+        if (includeDirs) {
+            includeDirs = includeDirs + collection
+        } else {
+            includeDirs = collection
+        }
+    }
+
+    void setIncludeDirs(Object... dirs) {
+        setIncludeDirs(project.files(dirs))
+    }
+
+    void outputDir(String dir) {
+        setOutputDir(dir)
+    }
+
+    void outputDir(File dir) {
+        setOutputDir(dir)
+    }
+
+    void setOutputDir(String dir) {
+        setOutputDir(project.file(dir))
+    }
+
+    void setOutputDir(File dir) {
+        outputDir = dir
+    }
+
+    void prefix(String text) {
+        setPrefix(text)
+    }
+
+    void setPrefix(String text) {
+        prefix = text
     }
 
     String getOutputFileName(File file) {
