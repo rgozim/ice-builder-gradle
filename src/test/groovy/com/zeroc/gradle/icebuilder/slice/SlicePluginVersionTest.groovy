@@ -6,6 +6,7 @@
 
 package com.zeroc.gradle.icebuilder.slice
 
+import com.zeroc.gradle.icebuilder.slice.extensions.SliceExtension
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals

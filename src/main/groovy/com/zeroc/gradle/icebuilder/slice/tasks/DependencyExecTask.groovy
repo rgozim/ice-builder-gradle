@@ -1,12 +1,12 @@
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.tasks
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.AbstractExecTask
 
-class PythonExec extends AbstractExecTask {
+class DependencyExecTask extends AbstractExecTask {
 
-    PythonExec() {
-        super(PythonExec.class)
+    DependencyExecTask() {
+        super(DependencyExecTask)
         super.executable(project.slice.slice2py)
         super.args("-I${project.slice.sliceDir}")
     }
@@ -14,14 +14,6 @@ class PythonExec extends AbstractExecTask {
     def include(Object... arguments) {
         List modified = arguments.collect { "-I${it}" }
         return super.args(modified)
-    }
-
-    def prefix(String prefix) {
-        return super.args("--prefix=${prefix}")
-    }
-
-    def outputDir(File dir) {
-        return super.args("--output-dir=${dir}")
     }
 
     def iceFiles(FileCollection files) {
