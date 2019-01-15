@@ -6,14 +6,10 @@
 
 package com.zeroc.gradle.icebuilder.slice;
 
-import org.gradle.api.logging.Logging
-import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 
 class SlicePlugin implements Plugin<Project> {
-    private static final def LOGGER = Logging.getLogger(SliceTask)
 
     void apply(Project project) {
         project.tasks.create('compileSlice', SliceTask) {
@@ -23,10 +19,8 @@ class SlicePlugin implements Plugin<Project> {
         // Create and install the extension object.
         def slice = project.extensions.create("slice", SliceExtension,
                 project.container(Java),
-                project.container(Python, { name -> new Python(name, project) })
+                project.container(Python, { new Python(it, project) })
         )
-
-        // slice.extensions.add("python", project.container(Python))
 
         slice.extensions.create("freezej", Freezej,
                 project.container(Dict), project.container(Index))
