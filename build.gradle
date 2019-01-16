@@ -4,10 +4,11 @@
 //
 // **********************************************************************
 
-
-apply plugin: 'groovy'
-apply plugin: 'java-gradle-plugin'
-apply plugin: 'maven-publish'
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -19,19 +20,8 @@ repositories {
 dependencies {
     implementation 'commons-io:commons-io:2.6'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.github.stefanbirkner:system-rules:1.16.0'
-}
-
-sourceSets {
-    main {
-        groovy {
-            srcDir "src/main/groovy"
-        }
-        resources {
-            srcDir "src/main/resources"
-        }
-    }
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.github.stefanbirkner:system-rules:1.16.0'
 }
 
 version  = "1.5.0-SNAPSHOT"

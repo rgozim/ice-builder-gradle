@@ -1,49 +1,53 @@
 package com.zeroc.gradle.icebuilder.slice
 
 import org.gradle.api.GradleException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class Configuration {
 
-    def _iceHome = null
-    def _iceVersion = null
-    def _srcDist = false
-    def _freezeHome = null
-    def _sliceDir = null
-    def _slice2py = null
-    def _slice2java = null
-    def _slice2freezej = null
-    def _jarDir = null
-    def _cppPlatform = null
-    def _cppConfiguration = null
-    def _compat = null
-    def _env = []
+    private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class)
+
+    def iceHome
+    def iceVersion
+    def srcDist
+    def freezeHome
+    def sliceDir
+    def slice2py
+    def slice2java
+    def slice2freezej
+    def jarDir
+    def cppPlatform
+    def cppConfiguration
+    def compat
+    def _env
 
     Configuration(iceHome = null, freezeHome = null, cppConfiguration = null, cppPlatform = null, compat = null) {
-        _iceHome = iceHome ?: getIceHome()
-        _freezeHome = freezeHome
+        this.iceHome = iceHome ?: getIceHome()
+        this.freezeHome = freezeHome
 
         // Guess the cpp platform and cpp configuration to use with Windows source builds
-        _cppConfiguration = cppConfiguration ?: System.getenv("CPP_CONFIGURATION")
-        _cppPlatform = cppPlatform ?: System.getenv("CPP_PLATFORM")
+        this.cppConfiguration = cppConfiguration ?: System.getenv("CPP_CONFIGURATION")
+        this.cppPlatform = cppPlatform ?: System.getenv("CPP_PLATFORM")
 
         def os = System.properties['os.name']
 
-        if (_iceHome != null) {
-            _srcDist = new File([_iceHome, "java", "build.gradle"].join(File.separator)).exists()
-            _slice2py = getSlice2py(_iceHome)
-            _slice2java = getSlice2java(_iceHome)
+        if (this.iceHome != null) {
+            srcDist = new File([this.iceHome, "java", "build.gradle"].join(File.separator)).exists()
+            slice2py = getSlice2py(this.iceHome)
+            slice2java = getSlice2java(this.iceHome)
 
             //
             // If freezeHome is not set we assume slice2freezej resides in the same location as slice2java
             // otherwise slice2freezej will be located in the freeze home bin directory.
             //
-            _slice2freezej = getSlice2freezej(_freezeHome ? _freezeHome : _iceHome)
+            slice2freezej = getSlice2freezej(this.freezeHome ? this.freezeHome : this.iceHome)
 
             //
             // Setup the environment required to run slice2java/slice2freezej commands
             //
             if (os.contains("Linux")) {
-                def cppDir = _srcDist ? "${_iceHome}/cpp" : _iceHome;
+                def cppDir = srcDist ? "${this.iceHome}/cpp" : this.iceHome;
 
                 def libdir = new File("${cppDir}/lib/i386-linux-gnu").exists() ?
                         "${cppDir}/lib/i386-linux-gnu" : "${cppDir}/lib"
@@ -59,14 +63,14 @@ class Configuration {
             //
             // Retrieve the version of the Ice distribution being used
             //
-            _iceVersion = getIceVersion(_iceHome)
+            iceVersion = getIceVersion(this.iceHome)
 
             //
             // This can only happen if iceHome is set to a source distribution. In this case we log a warning
             // and return partially initialized. We DO NOT want to throw an exception because we could be in the
             // middle of a clean, in which case slice2java will be missing.
             //
-            if (!_iceVersion) {
+            if (!iceVersion) {
                 LOGGER.warn("Unable to determine the Ice version using slice2java (${slice2java}) from " +
                         "iceHome (${iceHome}). This is expected when cleaning.")
                 return
@@ -75,35 +79,35 @@ class Configuration {
             //
             // --compat only available for Ice 3.7 and higher
             //
-            if (SliceExtension.compareVersions(_iceVersion, '3.7') >= 0) {
-                _compat = compat ?: false
+            if (SliceExtension.compareVersions(iceVersion, '3.7') >= 0) {
+                this.compat = compat ?: false
             } else if (compat != null) {
-                LOGGER.warn("Property \"slice.compat\" unavailable for Ice ${_iceVersion}.")
+                LOGGER.warn("Property \"slice.compat\" unavailable for Ice ${iceVersion}.")
             }
 
             //
             // Guess the slice and jar directories of the Ice distribution we are using
             //
             def sliceDirectories = [
-                    [_iceHome, "share", "slice"],                         // Common shared slice directory
-                    [_iceHome, "share", "ice", "slice"],                  // Ice >= 3.7
-                    [_iceHome, "share", "Ice-${_iceVersion}", "slice"],   // Ice < 3.7
-                    [_iceHome, "slice"]                                   // Opt/source installs & Windows distribution
+                    [this.iceHome, "share", "slice"],                         // Common shared slice directory
+                    [this.iceHome, "share", "ice", "slice"],                  // Ice >= 3.7
+                    [this.iceHome, "share", "Ice-${iceVersion}", "slice"],   // Ice < 3.7
+                    [this.iceHome, "slice"]                                   // Opt/source installs & Windows distribution
             ]
 
             def jarDirectories = [
-                    [_iceHome, "share", "java"],                          // Default usr install
-                    [_iceHome, _compat ? "java-compat" : "java", "lib"],  // Source distribution
-                    [_iceHome, "lib"]                                     // Opt style install & Windows distribution
+                    [this.iceHome, "share", "java"],                          // Default usr install
+                    [this.iceHome, this.compat ? "java-compat" : "java", "lib"],  // Source distribution
+                    [this.iceHome, "lib"]                                     // Opt style install & Windows distribution
             ]
 
             def sliceDirCandidates = sliceDirectories.collect { it.join(File.separator) }
             def jarDirCandidates = jarDirectories.collect { it.join(File.separator) }
 
-            _sliceDir = sliceDirCandidates.find { new File(it).exists() }
-            _jarDir = jarDirCandidates.find { new File(it).exists() }
+            sliceDir = sliceDirCandidates.find { new File(it).exists() }
+            jarDir = jarDirCandidates.find { new File(it).exists() }
 
-            if (!_sliceDir) {
+            if (!sliceDir) {
                 LOGGER.warn("Unable to locate slice directory in iceHome (${iceHome})")
             }
         }
@@ -188,7 +192,7 @@ class Configuration {
                 throw new GradleException("${command[0]} command failed: ${p.exitValue()}")
             }
             return serr.toString().trim()
-        } else if (!_srcDist) {
+        } else if (!srcDist) {
             // Only throw an exception if we are not using a source distribution. A binary distribution should
             // always have slice2java, howerver a source distribution may not. For example, during a clean.
             throw new GradleException("slice2java (${slice2java}) not found. Please ensure that Ice is installed " +
@@ -235,7 +239,7 @@ class Configuration {
             // For Windows binary distribution we first check for <IceHome>\tools that correspond with NuGet package
             // layout.
             //
-            def basePath = srcDist ? [homeDir, "cpp", "bin", _cppPlatform, _cppConfiguration] : [homeDir, "tools"]
+            def basePath = srcDist ? [homeDir, "cpp", "bin", cppPlatform, cppConfiguration] : [homeDir, "tools"]
             basePath = basePath.join(File.separator)
             if (new File(basePath).exists()) {
                 sliceCompiler = [basePath, compilerName].join(File.separator)
@@ -250,4 +254,20 @@ class Configuration {
 
         return sliceCompiler
     }
+
+    private def parseVersion(v) {
+        if (v) {
+            def vv = v.tokenize('.')
+            if (v.indexOf('a') != -1) {
+                return "${vv[0]}.${vv[1].replace('a', '.0-alpha')}"
+            } else if (v.indexOf('b') != -1) {
+                return "${vv[0]}.${vv[1].replace('b', '.0-beta')}"
+            } else {
+                return v
+            }
+        } else {
+            return null;
+        }
+    }
+
 }

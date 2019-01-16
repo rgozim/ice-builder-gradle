@@ -11,36 +11,40 @@ import org.gradle.api.Project
 
 class SlicePlugin implements Plugin<Project> {
 
-    void apply(Project project) {
-        project.tasks.create('compileSlice', SliceTask) {
-            group = "Slice"
-        }
+    final String GROUP = "slice"
 
+    void apply(Project project) {
         // Create and install the extension object.
-        def slice = project.extensions.create("slice", SliceExtension,
+        SliceExtension slice = project.extensions.create("slice", SliceExtension,
                 project.container(Java),
-                project.container(Python, { new Python(it, project) })
+                project.container(PythonExtension, { new PythonExtension(it, project) })
         )
 
-        slice.extensions.create("freezej", Freezej,
-                project.container(Dict), project.container(Index))
-
+        // Default output location for generated slice output
         slice.output = project.file("${project.buildDir}/generated-src")
 
-        if (isAndroidProject(project)) {
-            project.afterEvaluate {
-                // Android projects do not define a 'compileJava' task. We wait until the project is evaluated
-                // and add our dependency to the variant's javaCompiler task.
-                getAndroidVariants(project).all { variant ->
-                    variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
+        // Configuration extension for customising ice env variables
+        ConfigurationExtension configExt = slice.extensions.create("config", ConfigurationExtension)
+
+        // Configure SliceTask
+        project.afterEvaluate {
+            def sliceConfig = new Configuration(
+                    configExt.iceHome,
+                    configExt.freezeHome,
+                    configExt.cppConfiguration,
+                    configExt.cppPlatform,
+                    configExt.compat
+            )
+
+            slice.python.all { PythonExtension python ->
+                def taskName = "python${python.name.capitalize()}"
+                def pythonTask = project.tasks.create(taskName, PythonTask) {
+                    group = GROUP
+                    config = sliceConfig
                 }
-            }
-        } else {
-//            project.sourceSets.main.java.srcDir slice.output
-            project.afterEvaluate {
                 def compileJava = project.tasks.getByName("compileJava")
                 if (compileJava) {
-                    compileJava.dependsOn('compileSlice')
+                    compileJava.dependsOn pythonTask
                 }
             }
         }
@@ -54,5 +58,21 @@ class SlicePlugin implements Plugin<Project> {
         // https://sites.google.com/a/android.com/tools/tech-docs/new-build-system/user-guide
         return project.android.hasProperty('libraryVariants') ?
                 project.android.libraryVariants : project.android.applicationVariants
+    }
+
+    // 1 is a > b
+    // 0 if a == b
+    // -1 if a < b
+    static def compareVersions(a, b) {
+        def verA = a.tokenize('.')
+        def verB = b.tokenize('.')
+
+        for (int i = 0; i < Math.min(verA.size(), verB.size()); ++i) {
+            if (verA[i] != verB[i]) {
+                return verA[i] <=> verB[i]
+            }
+        }
+        // Common indices match. Assume the longest version is the most recent
+        verA.size() <=> verB.size()
     }
 }
