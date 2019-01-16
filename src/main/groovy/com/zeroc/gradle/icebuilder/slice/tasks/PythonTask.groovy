@@ -1,15 +1,17 @@
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.tasks
+
 
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
-class JavaTask extends SliceTaskBase {
+class PythonTask extends SliceTaskBase {
 
-    private static final def Log = Logging.getLogger(JavaTask)
+    private static final def Log = Logging.getLogger(PythonTask)
 
-    @org.gradle.api.tasks.Input
+    @Input
     @Optional
     String prefix
 
@@ -23,7 +25,11 @@ class JavaTask extends SliceTaskBase {
 
         List filesForProcessing = []
         inputs.outOfDate { change ->
+            // Ignore directories
             if (change.file.directory) return
+
+            // Ignore dependencies, we don't compile them
+            if (dependencies.contains(change.file)) return
 
             // Log which file will be included in slice2py
             Log.info("File for processing: $change.file")
@@ -33,7 +39,7 @@ class JavaTask extends SliceTaskBase {
         }
 
         if (!filesForProcessing.isEmpty()) {
-            List cmd = [config.slice2java, "-I${config.sliceDir}"]
+            List cmd = [config.slice2py, "-I${config.sliceDir}"]
 
             if (includeDirs) {
                 // Add any additional includes
@@ -42,6 +48,11 @@ class JavaTask extends SliceTaskBase {
 
             // Add files for processing
             cmd.addAll(filesForProcessing)
+
+            if (prefix) {
+                // Set a prefix
+                cmd.add("--prefix=${prefix}")
+            }
 
             // Set the output directory
             cmd.add("--output-dir=${outputDir}")

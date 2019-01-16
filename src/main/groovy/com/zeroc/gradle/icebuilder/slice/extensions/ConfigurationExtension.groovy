@@ -1,4 +1,4 @@
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.extensions
 
 import org.gradle.api.Project
 

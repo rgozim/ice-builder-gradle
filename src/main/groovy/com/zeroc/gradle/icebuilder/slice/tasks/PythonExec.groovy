@@ -1,4 +1,4 @@
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.tasks
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.AbstractExecTask

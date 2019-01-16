@@ -19,7 +19,6 @@ class Configuration {
     def jarDir
     def cppPlatform
     def cppConfiguration
-    def compat
     def _env
 
     Configuration(iceHome = null, freezeHome = null, cppConfiguration = null, cppPlatform = null, compat = null) {
@@ -76,14 +75,7 @@ class Configuration {
                 return
             }
 
-            //
-            // --compat only available for Ice 3.7 and higher
-            //
-            if (SliceExtension.compareVersions(iceVersion, '3.7') >= 0) {
-                this.compat = compat ?: false
-            } else if (compat != null) {
-                LOGGER.warn("Property \"slice.compat\" unavailable for Ice ${iceVersion}.")
-            }
+
 
             //
             // Guess the slice and jar directories of the Ice distribution we are using

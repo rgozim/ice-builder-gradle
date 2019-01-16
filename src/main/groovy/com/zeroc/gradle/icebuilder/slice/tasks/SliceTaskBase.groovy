@@ -1,5 +1,6 @@
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.tasks
 
+import com.zeroc.gradle.icebuilder.slice.Configuration
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -17,12 +18,12 @@ class SliceTaskBase extends DefaultTask {
     @InputFiles
     FileCollection inputFiles
 
+    @InputFiles
+    @Optional
+    FileCollection dependencies
+
     @OutputDirectory
     File outputDir
-
-    @Input
-    @Optional
-    String prefix
 
     @Input
     @Optional

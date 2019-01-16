@@ -4,8 +4,9 @@
 //
 // **********************************************************************
 
-package com.zeroc.gradle.icebuilder.slice
+package com.zeroc.gradle.icebuilder.slice.extensions
 
+import com.zeroc.gradle.icebuilder.slice.Java
 import org.gradle.api.NamedDomainObjectContainer
 
 class SliceExtension {

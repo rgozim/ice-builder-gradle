@@ -4,8 +4,12 @@
 //
 // **********************************************************************
 
-package com.zeroc.gradle.icebuilder.slice;
+package com.zeroc.gradle.icebuilder.slice
 
+import com.zeroc.gradle.icebuilder.slice.extensions.ConfigurationExtension
+import com.zeroc.gradle.icebuilder.slice.extensions.PythonExtension
+import com.zeroc.gradle.icebuilder.slice.extensions.SliceExtension
+import com.zeroc.gradle.icebuilder.slice.tasks.PythonTask;
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -36,8 +40,13 @@ class SlicePlugin implements Plugin<Project> {
                     configExt.compat
             )
 
-            slice.python.all { PythonExtension python ->
-                def taskName = "python${python.name.capitalize()}"
+            slice.java.all { Java javaExt ->
+                
+
+            }
+
+            slice.python.all { PythonExtension pythonExt ->
+                def taskName = "python${pythonExt.name.capitalize()}"
                 def pythonTask = project.tasks.create(taskName, PythonTask) {
                     group = GROUP
                     config = sliceConfig
