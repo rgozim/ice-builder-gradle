@@ -28,7 +28,7 @@ abstract class SliceTaskBase extends DefaultTask {
     FileCollection includeDirs
 
     // Change this to a configuration
-    Configuration config
+    Configuration config = new Configuration()
 
     void inputFiles(Object... files) {
         setInputFiles(files)

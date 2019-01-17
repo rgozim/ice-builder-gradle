@@ -15,14 +15,11 @@ class DependencyTask extends DefaultTask {
     @InputFiles
     FileCollection inputFiles
 
-    @OutputFiles
-    FileCollection outputFiles
-
     @Input
     @Optional
     FileCollection includeDirs
 
-    Configuration config
+    Configuration config = new Configuration()
 
     @TaskAction
     void apply() {
@@ -41,7 +38,7 @@ class DependencyTask extends DefaultTask {
         p.waitForProcessOutput(sout, System.err)
 
         // These files are dependencies of the input ice files
-        outputFiles = project.files(parseSliceDependencyXML(sout))
+        this.outputs = project.files(parseSliceDependencyXML(sout))
     }
 
     // Parse the dependency XML which is of the format:

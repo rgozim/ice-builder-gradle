@@ -37,13 +37,9 @@ class SlicePlugin implements Plugin<Project> {
                     configExt.freezeHome,
                     configExt.cppConfiguration,
                     configExt.cppPlatform,
-                    configExt.compat
             )
 
-            slice.java.all { Java javaExt ->
-
-
-            }
+            slice.java.all { Java javaExt -> }
 
             slice.python.all { PythonExtension pythonExt ->
                 def taskName = "python${pythonExt.name.capitalize()}"

@@ -21,15 +21,13 @@ class Configuration {
     def cppConfiguration
     def _env
 
-    Configuration(iceHome = null, freezeHome = null, cppConfiguration = null, cppPlatform = null, compat = null) {
+    Configuration(iceHome = null, freezeHome = null, cppConfiguration = null, cppPlatform = null) {
         this.iceHome = iceHome ?: getIceHome()
         this.freezeHome = freezeHome
 
         // Guess the cpp platform and cpp configuration to use with Windows source builds
         this.cppConfiguration = cppConfiguration ?: System.getenv("CPP_CONFIGURATION")
         this.cppPlatform = cppPlatform ?: System.getenv("CPP_PLATFORM")
-
-        def os = System.properties['os.name']
 
         if (this.iceHome != null) {
             srcDist = new File([this.iceHome, "java", "build.gradle"].join(File.separator)).exists()
@@ -45,6 +43,7 @@ class Configuration {
             //
             // Setup the environment required to run slice2java/slice2freezej commands
             //
+            def os = System.properties['os.name']
             if (os.contains("Linux")) {
                 def cppDir = srcDist ? "${this.iceHome}/cpp" : this.iceHome;
 
@@ -211,7 +210,6 @@ class Configuration {
         // Set the location of the sliceCompiler executable
         //
         if (os.contains("Windows")) {
-
             //
             // For Windows source distribution we first check for <IceHome>\cpp\bin\<cppPlatform>\<cppConfiguration>
             // that correspond with Ice 3.7 or greater source distribution.
