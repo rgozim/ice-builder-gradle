@@ -28,7 +28,7 @@ class SlicePlugin implements Plugin<Project> {
         slice.output = project.file("${project.buildDir}/generated-src")
 
         // Configuration extension for customising ice env variables
-        ConfigurationExtension configExt = slice.extensions.create("config", ConfigurationExtension)
+        ConfigurationExtension configExt = slice.extensions.create( "config", ConfigurationExtension, project)
 
         // Configure SliceTask
         project.afterEvaluate {
@@ -41,7 +41,7 @@ class SlicePlugin implements Plugin<Project> {
             )
 
             slice.java.all { Java javaExt ->
-                
+
 
             }
 

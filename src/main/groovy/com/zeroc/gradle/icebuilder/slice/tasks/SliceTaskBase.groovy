@@ -11,9 +11,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 
-class SliceTaskBase extends DefaultTask {
-
-    private static final def Log = Logging.getLogger(SliceTaskBase)
+abstract class SliceTaskBase extends DefaultTask {
 
     @InputFiles
     FileCollection inputFiles

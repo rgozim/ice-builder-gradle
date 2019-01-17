@@ -75,8 +75,6 @@ class Configuration {
                 return
             }
 
-
-
             //
             // Guess the slice and jar directories of the Ice distribution we are using
             //
@@ -87,18 +85,8 @@ class Configuration {
                     [this.iceHome, "slice"]                                   // Opt/source installs & Windows distribution
             ]
 
-            def jarDirectories = [
-                    [this.iceHome, "share", "java"],                          // Default usr install
-                    [this.iceHome, this.compat ? "java-compat" : "java", "lib"],  // Source distribution
-                    [this.iceHome, "lib"]                                     // Opt style install & Windows distribution
-            ]
-
             def sliceDirCandidates = sliceDirectories.collect { it.join(File.separator) }
-            def jarDirCandidates = jarDirectories.collect { it.join(File.separator) }
-
             sliceDir = sliceDirCandidates.find { new File(it).exists() }
-            jarDir = jarDirCandidates.find { new File(it).exists() }
-
             if (!sliceDir) {
                 LOGGER.warn("Unable to locate slice directory in iceHome (${iceHome})")
             }
