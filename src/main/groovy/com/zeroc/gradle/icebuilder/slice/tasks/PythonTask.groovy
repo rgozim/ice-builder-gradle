@@ -1,6 +1,6 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
-import com.zeroc.gradle.icebuilder.slice.Configuration
+
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional

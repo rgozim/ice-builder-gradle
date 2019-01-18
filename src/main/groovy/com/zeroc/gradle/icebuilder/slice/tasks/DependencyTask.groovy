@@ -7,7 +7,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
 class DependencyTask extends DefaultTask {
@@ -39,6 +38,26 @@ class DependencyTask extends DefaultTask {
 
         // These files are dependencies of the input ice files
         this.outputs = project.files(parseSliceDependencyXML(sout))
+    }
+
+    void includeDirs(FileCollection collection) {
+        setIncludeDirs(collection)
+    }
+
+    void includeDirs(Object... paths) {
+        setIncludeDirs(paths)
+    }
+
+    void setIncludeDirs(FileCollection collection) {
+        if (includeDirs) {
+            includeDirs = includeDirs + collection
+        } else {
+            includeDirs = collection
+        }
+    }
+
+    void setIncludeDirs(Object... dirs) {
+        setIncludeDirs(project.files(dirs))
     }
 
     // Parse the dependency XML which is of the format:
