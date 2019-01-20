@@ -4,6 +4,7 @@ import com.zeroc.gradle.icebuilder.slice.Configuration
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.Task
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Input
@@ -13,19 +14,21 @@ import org.gradle.api.tasks.OutputDirectory
 
 abstract class SliceTaskBase extends DefaultTask {
 
-    @InputFiles
-    FileCollection inputFiles
+    private static final def Log = Logging.getLogger(SliceTaskBase)
 
     @InputFiles
-    @Optional
-    FileCollection dependencies
+    FileCollection inputFiles
 
     @OutputDirectory
     File outputDir
 
     @Input
     @Optional
-    FileCollection includeDirs
+    FileCollection includeDirs = project.files()
+
+    @InputFiles
+    @Optional
+    FileCollection dependencies = project.files()
 
     // Change this to a configuration
     Configuration config = new Configuration()
@@ -48,6 +51,15 @@ abstract class SliceTaskBase extends DefaultTask {
 
     void setInputFiles(Object... files) {
         setInputFiles(project.files(files))
+    }
+
+    void sources(DependencyTask inputTask) {
+        setSources(inputTask)
+    }
+
+    void setSources(DependencyTask task) {
+        setInputFiles(project.files(task))
+        // setIncludeDirs(project.files(task.includeDirs))
     }
 
     void includeDirs(FileCollection collection) {
@@ -94,16 +106,13 @@ abstract class SliceTaskBase extends DefaultTask {
         prefix = text
     }
 
-    String getOutputFileName(File file) {
+    protected String getOutputFileName(File file) {
         def extension = FilenameUtils.getExtension(file.name)
         def filename = FilenameUtils.getBaseName(file.name)
-        if (prefix) {
-            filename = prefix + filename + "_ice"
-        }
         return "${filename}.{$extension}"
     }
 
-    void deleteOutputFile(File file) {
+    protected void deleteOutputFile(File file) {
         // Convert the input filename to the output filename and
         // delete that file
         def targetFile = project.file("$outputDir/${getOutputFileName(file)}")
@@ -112,10 +121,12 @@ abstract class SliceTaskBase extends DefaultTask {
         }
     }
 
-    void executeCommand(List cmd) {
+    protected void executeCommand(List cmd) {
         def sout = new StringBuffer()
         def p = cmd.execute()
+
         p.waitForProcessOutput(sout, System.err)
+
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }

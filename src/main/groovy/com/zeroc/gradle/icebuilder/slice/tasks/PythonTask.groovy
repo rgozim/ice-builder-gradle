@@ -1,7 +1,8 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
-
+import org.apache.commons.io.FilenameUtils
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.AbstractCopyTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
@@ -17,6 +18,8 @@ class PythonTask extends SliceTaskBase {
 
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
+        // inputFiles.each { Log.info("$it") }
+
         if (!inputs.incremental) {
             inputFiles.each { file ->
                 deleteOutputFile(file)
@@ -64,6 +67,16 @@ class PythonTask extends SliceTaskBase {
 
             deleteOutputFile(change.file)
         }
+    }
+
+    @Override
+    String getOutputFileName(File file) {
+        def extension = FilenameUtils.getExtension(file.name)
+        def filename = FilenameUtils.getBaseName(file.name)
+        if (prefix) {
+            filename = prefix + filename + "_ice"
+        }
+        return "${filename}.{$extension}"
     }
 
 }

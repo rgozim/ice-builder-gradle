@@ -1,33 +1,43 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
 import com.zeroc.gradle.icebuilder.slice.Configuration
+import groovy.transform.Internal
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.FileCollection
+import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
 class DependencyTask extends DefaultTask {
+
+    private static final def Log = Logging.getLogger(DependencyTask)
 
     @InputFiles
     FileCollection inputFiles
 
     @Input
     @Optional
-    FileCollection includeDirs
+    FileCollection includeDirs = project.files()
 
+    // Default config
+    @Internal
     Configuration config = new Configuration()
+
+    @OutputFiles
+    FileCollection result = project.files()
+
+    // private FileCollection result = project.files()
 
     @TaskAction
     void apply() {
         List cmd = [config.slice2py, "-I${config.sliceDir}"]
 
-        if (includeDirs) {
-            // Add any additional includes
-            includeDirs.each { dir -> cmd.add("-I${dir}") }
-        }
+        includeDirs.each { dir -> cmd.add("-I${dir}") }
 
         cmd.addAll(inputFiles.files)
         cmd.add("--depend-xml")
@@ -36,8 +46,19 @@ class DependencyTask extends DefaultTask {
         def p = cmd.execute()
         p.waitForProcessOutput(sout, System.err)
 
+        Log.info(sout as String)
+
+        def fileSet = parseSliceDependencyXML(sout)
+
         // These files are dependencies of the input ice files
-        this.outputs = project.files(parseSliceDependencyXML(sout))
+        result = project.files(fileSet)
+
+        // Log out
+        // result.each { Log.info("$it") }
+    }
+
+    FileCollection getResult() {
+        return result
     }
 
     void includeDirs(FileCollection collection) {
