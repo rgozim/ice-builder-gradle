@@ -2,27 +2,24 @@ package com.zeroc.gradle.icebuilder.slice.tasks
 
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.logging.Logging
-import org.gradle.api.tasks.AbstractCopyTask
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
+@SuppressWarnings("UnstableApiUsage")
 class PythonTask extends SliceTaskBase {
 
     private static final def Log = Logging.getLogger(PythonTask)
 
     @Input
-    @Optional
-    String prefix
+    final Property<String> prefix = project.objects.property(String)
 
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
-        // inputFiles.each { Log.info("$it") }
-
         if (!inputs.incremental) {
-            inputFiles.each { file ->
-                deleteOutputFile(file)
+            inputFiles.get().each { file ->
+                deleteOutputFile(file.asFile)
             }
         }
 
@@ -32,7 +29,7 @@ class PythonTask extends SliceTaskBase {
             if (change.file.directory) return
 
             // Ignore dependencies, we don't compile them
-            if (dependencies.contains(change.file)) return
+            if (dependencies.get().contains(change.file)) return
 
             // Log which file will be included in slice2py
             Log.info("File for processing: $change.file")
@@ -44,10 +41,8 @@ class PythonTask extends SliceTaskBase {
         if (!filesForProcessing.isEmpty()) {
             List cmd = [config.slice2py, "-I${config.sliceDir}"]
 
-            if (includeDirs) {
-                // Add any additional includes
-                includeDirs.each { dir -> cmd.add("-I${dir}") }
-            }
+            // Add any additional includes
+            includeDirs.get().each { dir -> cmd.add("-I${dir.asFile}") }
 
             // Add files for processing
             cmd.addAll(filesForProcessing)

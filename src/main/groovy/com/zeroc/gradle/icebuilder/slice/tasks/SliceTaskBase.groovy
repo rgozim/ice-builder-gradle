@@ -4,107 +4,124 @@ import com.zeroc.gradle.icebuilder.slice.Configuration
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.Task
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 
+@SuppressWarnings("UnstableApiUsage")
 abstract class SliceTaskBase extends DefaultTask {
 
     private static final def Log = Logging.getLogger(SliceTaskBase)
 
-    @InputFiles
-    FileCollection inputFiles
-
+    // The directory to write source files to
     @OutputDirectory
-    File outputDir
-
-    @Input
-    @Optional
-    FileCollection includeDirs = project.files()
+    final DirectoryProperty outputDir = project.objects.directoryProperty()
 
     @InputFiles
+    final ListProperty<RegularFile> inputFiles = project.objects.listProperty(RegularFile)
+
     @Optional
-    FileCollection dependencies = project.files()
+    @InputFiles
+    final ListProperty<RegularFile> dependencies = project.objects.listProperty(RegularFile)
+
+    @Optional
+    @Input
+    final ConfigurableFileCollection includeDirs = project.layout.configurableFiles()
 
     // Change this to a configuration
     Configuration config = new Configuration()
 
-    void inputFiles(Object... files) {
-        setInputFiles(files)
+
+    void includes(Object... files) {
+        setIncludes(files)
     }
 
-    void inputFiles(FileCollection collection) {
-        setInputFiles(collection)
-    }
-
-    void setInputFiles(FileCollection collection) {
-        if (inputFiles) {
-            inputFiles = inputFiles + collection
-        } else {
-            inputFiles = collection
+    void setIncludes(Object... files) {
+        def includes = includeDirs.get()
+        files.each { file ->
+            includes.add(project.objects.directoryProperty().set(file as File))
         }
     }
 
-    void setInputFiles(Object... files) {
-        setInputFiles(project.files(files))
-    }
 
-    void sources(DependencyTask inputTask) {
-        setSources(inputTask)
-    }
-
-    void setSources(DependencyTask task) {
-        setInputFiles(project.files(task))
-        // setIncludeDirs(project.files(task.includeDirs))
-    }
-
-    void includeDirs(FileCollection collection) {
-        setIncludeDirs(collection)
-    }
-
-    void includeDirs(Object... paths) {
-        setIncludeDirs(paths)
-    }
-
-    void setIncludeDirs(FileCollection collection) {
-        if (includeDirs) {
-            includeDirs = includeDirs + collection
-        } else {
-            includeDirs = collection
-        }
-    }
-
-    void setIncludeDirs(Object... dirs) {
-        setIncludeDirs(project.files(dirs))
-    }
-
-    void outputDir(String dir) {
-        setOutputDir(dir)
-    }
-
-    void outputDir(File dir) {
-        setOutputDir(dir)
-    }
-
-    void setOutputDir(String dir) {
-        setOutputDir(project.file(dir))
-    }
-
-    void setOutputDir(File dir) {
-        outputDir = dir
-    }
-
-    void prefix(String text) {
-        setPrefix(text)
-    }
-
-    void setPrefix(String text) {
-        prefix = text
-    }
+//    void inputFiles(Object... files) {
+//        setInputFiles(files)
+//    }
+//
+//    void inputFiles(FileCollection collection) {
+//        setInputFiles(collection)
+//    }
+//
+//    void setInputFiles(FileCollection collection) {
+//        if (inputFiles) {
+//            inputFiles = inputFiles + collection
+//        } else {
+//            inputFiles = collection
+//        }
+//    }
+//
+//    void setInputFiles(Object... files) {
+//        setInputFiles(project.files(files))
+//    }
+//
+//    void sources(DependencyTask inputTask) {
+//        setSources(inputTask)
+//    }
+//
+//    void setSources(DependencyTask task) {
+//        setInputFiles(project.files(task))
+//        // setIncludeDirs(project.files(task.includeDirs))
+//    }
+//
+//    void includeDirs(FileCollection collection) {
+//        setIncludeDirs(collection)
+//    }
+//
+//    void includeDirs(Object... paths) {
+//        setIncludeDirs(paths)
+//    }
+//
+//    void setIncludeDirs(FileCollection collection) {
+//        if (includeDirs) {
+//            includeDirs = includeDirs + collection
+//        } else {
+//            includeDirs = collection
+//        }
+//    }
+//
+//    void setIncludeDirs(Object... dirs) {
+//        setIncludeDirs(project.files(dirs))
+//    }
+//
+//    void outputDir(String dir) {
+//        setOutputDir(dir)
+//    }
+//
+//    void outputDir(File dir) {
+//        setOutputDir(dir)
+//    }
+//
+//    void setOutputDir(String dir) {
+//        setOutputDir(project.file(dir))
+//    }
+//
+//    void setOutputDir(File dir) {
+//        outputDir = dir
+//    }
+//
+//    void prefix(String text) {
+//        setPrefix(text)
+//    }
+//
+//    void setPrefix(String text) {
+//        prefix = text
+//    }
 
     protected String getOutputFileName(File file) {
         def extension = FilenameUtils.getExtension(file.name)
