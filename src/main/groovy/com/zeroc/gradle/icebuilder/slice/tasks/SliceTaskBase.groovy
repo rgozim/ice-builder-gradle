@@ -1,15 +1,22 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
 import com.zeroc.gradle.icebuilder.slice.Configuration
+import com.zeroc.gradle.icebuilder.slice.DependencyParser
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -17,26 +24,42 @@ import org.gradle.api.tasks.OutputDirectory
 @SuppressWarnings("UnstableApiUsage")
 abstract class SliceTaskBase extends DefaultTask {
 
-    private static final def Log = Logging.getLogger(SliceTaskBase)
+    private static final Logger Log = Logging.getLogger(SliceTaskBase)
 
     // The directory to write source files to
     @OutputDirectory
     final DirectoryProperty outputDir = project.objects.directoryProperty()
 
-    @InputFiles
-    final ListProperty<RegularFile> inputFiles = project.objects.listProperty(RegularFile)
 
-    @Optional
     @InputFiles
-    final ListProperty<RegularFile> dependencies = project.objects.listProperty(RegularFile)
+    final ConfigurableFileCollection sources = project.files()
 
     @Optional
     @Input
-    final ConfigurableFileCollection includeDirs = project.layout.configurableFiles()
+    final ConfigurableFileCollection includeDirs = project.files()
 
     // Change this to a configuration
     Configuration config = new Configuration()
 
+    final MapProperty<RegularFile, FileCollection> inputFiles = project.objects.mapProperty(File, FileCollection)
+
+    @InputFiles
+    List<File> getSources() {
+        inputFiles.keySet()
+    }
+
+    @InputFiles
+    Set<File> getDependencies() {
+        Set<File> uniqueDependencies = []
+        inputFiles.values().each {
+            uniqueDependencies.addAll(it)
+        }
+        uniqueDependencies
+    }
+
+    void setInputFiles(MapProperty<? extends RegularFile, ? extends FileCollection> input) {
+        inputFiles.set(input)
+    }
 
     void includes(Object... files) {
         setIncludes(files)
@@ -48,80 +71,6 @@ abstract class SliceTaskBase extends DefaultTask {
             includes.add(project.objects.directoryProperty().set(file as File))
         }
     }
-
-
-//    void inputFiles(Object... files) {
-//        setInputFiles(files)
-//    }
-//
-//    void inputFiles(FileCollection collection) {
-//        setInputFiles(collection)
-//    }
-//
-//    void setInputFiles(FileCollection collection) {
-//        if (inputFiles) {
-//            inputFiles = inputFiles + collection
-//        } else {
-//            inputFiles = collection
-//        }
-//    }
-//
-//    void setInputFiles(Object... files) {
-//        setInputFiles(project.files(files))
-//    }
-//
-//    void sources(DependencyTask inputTask) {
-//        setSources(inputTask)
-//    }
-//
-//    void setSources(DependencyTask task) {
-//        setInputFiles(project.files(task))
-//        // setIncludeDirs(project.files(task.includeDirs))
-//    }
-//
-//    void includeDirs(FileCollection collection) {
-//        setIncludeDirs(collection)
-//    }
-//
-//    void includeDirs(Object... paths) {
-//        setIncludeDirs(paths)
-//    }
-//
-//    void setIncludeDirs(FileCollection collection) {
-//        if (includeDirs) {
-//            includeDirs = includeDirs + collection
-//        } else {
-//            includeDirs = collection
-//        }
-//    }
-//
-//    void setIncludeDirs(Object... dirs) {
-//        setIncludeDirs(project.files(dirs))
-//    }
-//
-//    void outputDir(String dir) {
-//        setOutputDir(dir)
-//    }
-//
-//    void outputDir(File dir) {
-//        setOutputDir(dir)
-//    }
-//
-//    void setOutputDir(String dir) {
-//        setOutputDir(project.file(dir))
-//    }
-//
-//    void setOutputDir(File dir) {
-//        outputDir = dir
-//    }
-//
-//    void prefix(String text) {
-//        setPrefix(text)
-//    }
-//
-//    void setPrefix(String text) {
-//        prefix = text
-//    }
 
     protected String getOutputFileName(File file) {
         def extension = FilenameUtils.getExtension(file.name)

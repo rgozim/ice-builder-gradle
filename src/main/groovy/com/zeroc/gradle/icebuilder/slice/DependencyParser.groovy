@@ -13,8 +13,8 @@ class DependencyParser {
     //   <source name="Hello.ice">
     //   </source>
     // </dependencies>
-    static Set<Dependency> parseSliceDependencyXML(StringBuffer sout) {
-        def xml = new XmlSlurper().parseText(sout.toString())
+    static Set<Dependency> parseSliceDependencyXML(String text) {
+        def xml = new XmlSlurper().parseText(text)
         if (xml.name() != "dependencies") {
             throw new GradleException("malformed XML")
         }
@@ -45,8 +45,31 @@ class DependencyParser {
         return dependencies
     }
 
+    static Map<File, List<File>> parseAsMap(String text) {
+        def xml = new XmlSlurper().parseText(text)
+        if (xml.name() != "dependencies") {
+            throw new GradleException("malformed XML")
+        }
+
+        Map<File, List<File>> results = [:]
+        xml.children().each {
+            if (it.name() == "source") {
+                File source = new File(it.attributes().get("name"))
+                List<File> dependencies = []
+                it.children().each {
+                    if (it.name() == "dependsOn") {
+                        File dependsOn = new File(it.attributes().get("name"))
+                        dependencies.add(dependsOn)
+                    }
+                }
+                results.put(source, dependencies)
+            }
+        }
+        return results
+    }
+
     static class Dependency {
-        List sources = []
+        List<File> sources = []
 
         File self
 

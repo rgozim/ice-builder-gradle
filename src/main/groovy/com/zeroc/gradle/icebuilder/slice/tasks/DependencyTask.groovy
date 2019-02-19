@@ -18,12 +18,12 @@ class DependencyTask extends DefaultTask {
 
     private static final Logger Log = Logging.getLogger(DependencyTask)
 
-    @InputFiles
-    final ConfigurableFileCollection inputFiles = project.layout.configurableFiles()
-
     @Optional
     @Input
     final ConfigurableFileCollection includeDirs = project.layout.configurableFiles()
+
+    @InputFiles
+    final ConfigurableFileCollection inputFiles = project.layout.configurableFiles()
 
     @OutputFile
     final RegularFileProperty outputFile = project.objects.fileProperty()

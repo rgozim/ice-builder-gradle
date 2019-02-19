@@ -1,5 +1,6 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
+import com.zeroc.gradle.icebuilder.slice.DependencyParser
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
@@ -7,7 +8,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
-@SuppressWarnings("UnstableApiUsage")
+
 class PythonTask extends SliceTaskBase {
 
     private static final def Log = Logging.getLogger(PythonTask)
@@ -17,6 +18,12 @@ class PythonTask extends SliceTaskBase {
 
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
+        // parseXml
+        Set<DependencyParser.Dependency> dependencies =
+                DependencyParser.parseSliceDependencyXML(dependencyXmlFile.get().asFile.text)
+
+
+
         if (!inputs.incremental) {
             inputFiles.get().each { file ->
                 deleteOutputFile(file.asFile)
