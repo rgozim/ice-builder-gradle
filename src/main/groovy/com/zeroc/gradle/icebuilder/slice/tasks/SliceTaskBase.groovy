@@ -1,74 +1,88 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
 import com.zeroc.gradle.icebuilder.slice.Configuration
-import com.zeroc.gradle.icebuilder.slice.DependencyParser
+import groovy.transform.CompileStatic
+import groovy.transform.Internal
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.RegularFile
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 
 @SuppressWarnings("UnstableApiUsage")
+@CompileStatic
 abstract class SliceTaskBase extends DefaultTask {
 
     private static final Logger Log = Logging.getLogger(SliceTaskBase)
 
-    // The directory to write source files to
-    @OutputDirectory
-    final DirectoryProperty outputDir = project.objects.directoryProperty()
+    private final DirectoryProperty outputDir = project.objects.directoryProperty()
 
+    private final ConfigurableFileCollection includeDirs = project.files()
 
-    @InputFiles
-    final ConfigurableFileCollection sources = project.files()
+    private final MapProperty<File, FileCollection> sourceToDependencies =
+            project.objects.mapProperty(File, List<File>)
 
-    @Optional
-    @Input
-    final ConfigurableFileCollection includeDirs = project.files()
+    private final MapProperty<File, List<File>> dependencyToSources =
+            project.objects.mapProperty(File, FileCollection)
+
+    private Set<File> uniqueDependencies = []
 
     // Change this to a configuration
-    Configuration config = new Configuration()
+    protected Configuration config = new Configuration()
 
-    final MapProperty<RegularFile, FileCollection> inputFiles = project.objects.mapProperty(File, FileCollection)
+    @OutputDirectory
+    DirectoryProperty getOutputDir() {
+        return outputDir
+    }
+
 
     @InputFiles
-    List<File> getSources() {
-        inputFiles.keySet()
+    Set<File> getSources() {
+        sourceToDependencies.get().keySet()
     }
 
     @InputFiles
     Set<File> getDependencies() {
-        Set<File> uniqueDependencies = []
-        inputFiles.values().each {
-            uniqueDependencies.addAll(it)
+        if (uniqueDependencies.isEmpty()) {
+            sourceToDependencies.get().values().each { FileCollection files ->
+                uniqueDependencies.addAll(files.files)
+            }
         }
         uniqueDependencies
     }
 
-    void setInputFiles(MapProperty<? extends RegularFile, ? extends FileCollection> input) {
-        inputFiles.set(input)
+    @Optional
+    @Input
+    ConfigurableFileCollection getIncludeDirs() {
+        return includeDirs
     }
 
-    void includes(Object... files) {
-        setIncludes(files)
+    @Internal
+    MapProperty<File, FileCollection> getInputFiles() {
+        return sourceToDependencies
     }
 
-    void setIncludes(Object... files) {
-        def includes = includeDirs.get()
-        files.each { file ->
-            includes.add(project.objects.directoryProperty().set(file as File))
+    void calculateReverse() {
+
+        Map<File, List<File>> reverse = [:]
+
+        sourceToDependencies.get().each { source, dependencies ->
+            dependencies.files.each { File dependency ->
+                 if (reverse.containsKey(dependency)) {
+                     reverse.get(dependency).add(source)
+                 }
+
+            }
+
+
         }
     }
 

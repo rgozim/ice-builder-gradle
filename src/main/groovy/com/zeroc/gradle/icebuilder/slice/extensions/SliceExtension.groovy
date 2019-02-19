@@ -17,12 +17,13 @@ class SliceExtension {
 
     File output
 
-    SliceExtension(java, python) {
+    SliceExtension(NamedDomainObjectContainer<Java> java,
+                   NamedDomainObjectContainer<PythonExtension> python) {
         this.java = java
         this.python = python
     }
 
-    def java(Closure closure) {
+    void java(Closure closure) {
         try {
             java.configure(closure)
         } catch (MissingPropertyException ex) {
@@ -30,7 +31,7 @@ class SliceExtension {
         }
     }
 
-    def python(Closure closure) {
+    void python(Closure closure) {
         try {
             python.configure(closure)
         } catch (MissingPropertyException ex) {

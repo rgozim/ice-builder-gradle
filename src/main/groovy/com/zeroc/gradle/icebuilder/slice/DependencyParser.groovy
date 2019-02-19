@@ -68,23 +68,91 @@ class DependencyParser {
         return results
     }
 
-    static class Dependency {
-        List<File> sources = []
+    static class DependencyMap implements Map<File, List<File>> {
 
-        File self
+        private Map<File, List<File>> sourceToDependencies = [:]
 
-        Dependency(List sources, File self) {
-            this.sources = sources
-            this.self = self
+        private Map<File, List<File>> dependenciesToSource = [:]
+
+        Map<File, List<File>> getDependenciesToSource() {
+            return dependenciesToSource
         }
 
         @Override
-        String toString() {
-            def s = "Sources with dependency $self : \n"
-            sources.each {
-                s = s + "$it\n"
+        int size() {
+            return sourceToDependencies.size()
+        }
+
+        @Override
+        boolean isEmpty() {
+            return false
+        }
+
+        @Override
+        boolean containsKey(Object key) {
+            return sourceToDependencies.containsKey(key)
+        }
+
+        @Override
+        boolean containsValue(Object value) {
+            return sourceToDependencies.containsValue(value)
+        }
+
+        @Override
+        List<File> get(Object key) {
+            return sourceToDependencies.get(key)
+        }
+
+        @Override
+        List<File> put(File source, List<File> dependencies) {
+            dependencies.each { File dep ->
+                if (dependenciesToSource.containsKey(dep)) {
+                    def sources = dependenciesToSource.get(dep)
+                    if (!sources.contains(source)) {
+                        sources.push(source)
+                    }
+                } else {
+                    dependenciesToSource.put(dep, [source])
+                }
             }
-            return s
+            return sourceToDependencies.put(source, dependencies)
+        }
+
+        @Override
+        List<File> remove(Object source) {
+            dependenciesToSource.each { File dependency, List<File> sources ->
+                if (sources.remove(source)) {
+                    if (sources.isEmpty()) {
+                        dependenciesToSource.remove(dependency)
+                    }
+                }
+            }
+            return sourceToDependencies.remove(source)
+        }
+
+        @Override
+        void putAll(Map<? extends File, ? extends List<File>> m) {
+
+        }
+
+        @Override
+        void clear() {
+
+        }
+
+        @Override
+        Set<File> keySet() {
+            return null
+        }
+
+        @Override
+        Collection<List<File>> values() {
+            return null
+        }
+
+        @Override
+        Set<Entry<File, List<File>>> entrySet() {
+            return null
         }
     }
 
