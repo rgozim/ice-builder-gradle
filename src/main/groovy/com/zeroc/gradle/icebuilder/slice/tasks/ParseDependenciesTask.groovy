@@ -1,11 +1,10 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
-
+import com.zeroc.gradle.icebuilder.slice.utils.DependencyMap
+import com.zeroc.gradle.icebuilder.slice.utils.DependencyParser
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
@@ -16,39 +15,17 @@ class ParseDependenciesTask extends DefaultTask {
     @InputFile
     final RegularFileProperty dependencyXmlFile = project.objects.fileProperty()
 
-    private final MapProperty<RegularFileProperty, FileCollection> inputFiles =
-            project.objects.mapProperty(File, FileCollection)
+    private Property<DependencyMap> dependencyMap = project.objects.property(DependencyMap)
 
     @TaskAction
     void apply() {
         // parseXml
-        def xml = new XmlSlurper().parseText(dependencyXmlFile.get().asFile.text)
-        if (xml.name() != "dependencies") {
-            throw new GradleException("malformed XML")
-        }
-
-        xml.children().each {
-            if (it.name() == "source") {
-                RegularFileProperty source = project.objects.fileProperty()
-                source.set(new File(it.attributes().get("name")))
-
-                List<File> dependencies = []
-                it.children().each {
-                    if (it.name() == "dependsOn") {
-                        File dependsOn = new File(it.attributes().get("name"))
-                        dependencies.add(dependsOn)
-                    }
-                }
-
-                inputFiles.put(source, project.files(dependencies))
-            }
-        }
+        dependencyMap.set(DependencyParser.parseAsMap(dependencyXmlFile.get().asFile.text))
     }
 
     @Nested
-    MapProperty<RegularFileProperty, FileCollection> getInputFiles() {
-        return inputFiles
+    Property<DependencyMap> getDependencyMap() {
+        return dependencyMap
     }
-
 
 }

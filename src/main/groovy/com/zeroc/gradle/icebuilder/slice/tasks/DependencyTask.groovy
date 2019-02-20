@@ -32,7 +32,7 @@ class DependencyTask extends DefaultTask {
 
     @TaskAction
     void apply() {
-        List<String> cmd = [config.slice2py, "-I${config.sliceDir}"]
+        List cmd = [config.slice2py, "-I${config.sliceDir}"]
         includeDirs.each { dir -> cmd.add("-I${dir}") }
         cmd.addAll(inputFiles.files)
         cmd.add("--depend-xml")
@@ -46,8 +46,14 @@ class DependencyTask extends DefaultTask {
     }
 
     private void writeFile(File destination, String content) throws IOException {
-        try (BufferedWriter output = new BufferedWriter(new FileWriter(destination))) {
-            output.write(content)
+        BufferedWriter output = null;
+        try {
+            output = new BufferedWriter(new FileWriter(destination));
+            output.write(content);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
         }
     }
 

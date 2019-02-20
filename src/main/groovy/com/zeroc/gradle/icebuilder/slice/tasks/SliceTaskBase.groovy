@@ -1,6 +1,8 @@
 package com.zeroc.gradle.icebuilder.slice.tasks
 
 import com.zeroc.gradle.icebuilder.slice.Configuration
+import com.zeroc.gradle.icebuilder.slice.utils.DependencyMap
+import com.zeroc.gradle.icebuilder.slice.utils.DependencyParser
 import groovy.transform.CompileStatic
 import groovy.transform.Internal
 import org.apache.commons.io.FilenameUtils
@@ -8,14 +10,19 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+
+import javax.inject.Inject
+import java.util.concurrent.Callable
 
 @SuppressWarnings("UnstableApiUsage")
 @CompileStatic
@@ -23,40 +30,33 @@ abstract class SliceTaskBase extends DefaultTask {
 
     private static final Logger Log = Logging.getLogger(SliceTaskBase)
 
-    private final DirectoryProperty outputDir = project.objects.directoryProperty()
-
     private final ConfigurableFileCollection includeDirs = project.files()
 
-    private final MapProperty<File, FileCollection> sourceToDependencies =
-            project.objects.mapProperty(File, List<File>)
+    private final DirectoryProperty outputDir = project.objects.directoryProperty()
 
-    private final MapProperty<File, List<File>> dependencyToSources =
-            project.objects.mapProperty(File, FileCollection)
-
-    private Set<File> uniqueDependencies = []
+    private final Property<DependencyMap> sources = project.objects.property(DependencyMap)
 
     // Change this to a configuration
     protected Configuration config = new Configuration()
+
+    @Inject
+    ProviderFactory getProviders() {
+        throw new UnsupportedOperationException()
+    }
 
     @OutputDirectory
     DirectoryProperty getOutputDir() {
         return outputDir
     }
 
-
     @InputFiles
-    Set<File> getSources() {
-        sourceToDependencies.get().keySet()
+    Set<File> getSourceSet() {
+        sources.get().keySet()
     }
 
     @InputFiles
-    Set<File> getDependencies() {
-        if (uniqueDependencies.isEmpty()) {
-            sourceToDependencies.get().values().each { FileCollection files ->
-                uniqueDependencies.addAll(files.files)
-            }
-        }
-        uniqueDependencies
+    Set<File> getDependencySet() {
+        sources.get().getDependenciesToSource().keySet()
     }
 
     @Optional
@@ -66,24 +66,29 @@ abstract class SliceTaskBase extends DefaultTask {
     }
 
     @Internal
-    MapProperty<File, FileCollection> getInputFiles() {
-        return sourceToDependencies
+    Property<DependencyMap> getSources() {
+        return sources
     }
 
-    void calculateReverse() {
-
-        Map<File, List<File>> reverse = [:]
-
-        sourceToDependencies.get().each { source, dependencies ->
-            dependencies.files.each { File dependency ->
-                 if (reverse.containsKey(dependency)) {
-                     reverse.get(dependency).add(source)
-                 }
-
+    @Internal
+    Provider<Map<File, List<File>>> getDependencyMap() {
+        providers.provider(new Callable<Map<File, List<File>>>() {
+            @Override
+            Map<File, List<File>> call() throws Exception {
+                return sources.get().getDependenciesToSource()
             }
+        })
+    }
 
+    void setSources(Provider<? extends RegularFile> xmlFile) {
+        sources.set(xmlFile.map { DependencyParser.parseAsMap(it.asFile.text) })
 
-        }
+//        sources.set(providers.provider(new Callable<DependencyMap>() {
+//            @Override
+//            DependencyMap call() throws Exception {
+//                return DependencyParser.parseAsMap(xmlFile.get().asFile.text)
+//            }
+//        }))
     }
 
     protected String getOutputFileName(File file) {

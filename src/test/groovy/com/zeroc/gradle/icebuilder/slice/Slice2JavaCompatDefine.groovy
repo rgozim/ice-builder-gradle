@@ -22,7 +22,7 @@ class Slice2JavaCompatDefine extends TestCase {
 
     @Test
     public void testSlice2JavaCompatDefine() {
-        // Where builder checks for slice files by default
+        // Where builder checks for slice sources by default
         pathToFile([project.rootDir, 'src', 'main', 'slice']).mkdirs()
 
         writeTestSliceToFile(pathToFile([project.rootDir, 'src', 'main', 'slice', 'Test.ice']))

@@ -15,7 +15,7 @@ class Slice2JavaPluginTest extends TestCase {
 
     @Test
     public void testSlice2JavaWithDefaults() {
-        // Where builder checks for slice files by default
+        // Where builder checks for slice sources by default
         pathToFile([project.rootDir, 'src', 'main', 'slice']).mkdirs()
 
         writeTestSliceToFile(pathToFile([project.rootDir, 'src', 'main', 'slice', 'Test.ice']))
@@ -45,7 +45,7 @@ class Slice2JavaPluginTest extends TestCase {
 
     @Test
     public void testRemovingGeneratedFiles() {
-        // Where builder checks for slice files by default
+        // Where builder checks for slice sources by default
         pathToFile([project.rootDir, 'src', 'main', 'slice']).mkdirs()
 
         writeTestSliceToFile(pathToFile([project.rootDir, 'src', 'main', 'slice', 'Test.ice']))

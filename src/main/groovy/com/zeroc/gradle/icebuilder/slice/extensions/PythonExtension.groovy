@@ -12,9 +12,9 @@ class PythonExtension {
 
     final String name
 
-    final ConfigurableFileCollection include
+    final ConfigurableFileCollection includes
 
-    final ConfigurableFileCollection files
+    final ConfigurableFileCollection sources
 
     final DirectoryProperty sourceDir
 
@@ -25,8 +25,8 @@ class PythonExtension {
     PythonExtension(String name, Project project) {
         this.name = name
         this.project = project
-        this.include = project.files()
-        this.files = project.files()
+        this.includes = project.files()
+        this.sources = project.files()
         this.sourceDir = project.objects.directoryProperty()
         this.outputDir = project.objects.directoryProperty()
 

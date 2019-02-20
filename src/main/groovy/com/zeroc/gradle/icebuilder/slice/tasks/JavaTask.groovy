@@ -16,53 +16,53 @@ class JavaTask extends SliceTaskBase {
 
     @TaskAction
     void action(IncrementalTaskInputs inputs) {
-        if (!inputs.incremental) {
-            inputFiles.each { file ->
-                deleteOutputFile(file)
-            }
-        }
-
-        List filesForProcessing = []
-        inputs.outOfDate { change ->
-            if (change.file.directory) return
-
-            // Log which file will be included in slice2py
-            Log.info("File for processing: $change.file")
-
-            // Add input file for processing
-            filesForProcessing.add("${change.file}")
-        }
-
-        if (!filesForProcessing.isEmpty()) {
-            List cmd = [config.slice2java, "-I${config.sliceDir}"]
-
-            if (includeDirs) {
-                // Add any additional includes
-                includeDirs.each { dir -> cmd.add("-I${dir}") }
-            }
-
-            //
-            // --compat only available for Ice 3.7 and higher
-            //
-            if (SlicePlugin.compareVersions(iceVersion, '3.7') >= 0) {
-                this.compat = compat ?: false
-            } else if (compat != null) {
-                LOGGER.warn("Property \"slice.compat\" unavailable for Ice ${iceVersion}.")
-            }
-
-            // Add files for processing
-            cmd.addAll(filesForProcessing)
-
-            // Set the output directory
-            cmd.add("--output-dir=${outputDir}")
-            executeCommand(cmd)
-        }
-
-        inputs.removed { change ->
-            if (change.file.directory) return
-
-            deleteOutputFile(change.file)
-        }
+//        if (!inputs.incremental) {
+//            inputFiles.each { file ->
+//                deleteOutputFile(file)
+//            }
+//        }
+//
+//        List filesForProcessing = []
+//        inputs.outOfDate { change ->
+//            if (change.file.directory) return
+//
+//            // Log which file will be included in slice2py
+//            Log.info("File for processing: $change.file")
+//
+//            // Add input file for processing
+//            filesForProcessing.add("${change.file}")
+//        }
+//
+//        if (!filesForProcessing.isEmpty()) {
+//            List cmd = [config.slice2java, "-I${config.sliceDir}"]
+//
+//            if (includeDirs) {
+//                // Add any additional includes
+//                includeDirs.each { dir -> cmd.add("-I${dir}") }
+//            }
+//
+//            //
+//            // --compat only available for Ice 3.7 and higher
+//            //
+//            if (SlicePlugin.compareVersions(iceVersion, '3.7') >= 0) {
+//                this.compat = compat ?: false
+//            } else if (compat != null) {
+//                LOGGER.warn("Property \"slice.compat\" unavailable for Ice ${iceVersion}.")
+//            }
+//
+//            // Add sources for processing
+//            cmd.addAll(filesForProcessing)
+//
+//            // Set the output directory
+//            cmd.add("--output-dir=${outputDir}")
+//            executeCommand(cmd)
+//        }
+//
+//        inputs.removed { change ->
+//            if (change.file.directory) return
+//
+//            deleteOutputFile(change.file)
+//        }
     }
 
 }
