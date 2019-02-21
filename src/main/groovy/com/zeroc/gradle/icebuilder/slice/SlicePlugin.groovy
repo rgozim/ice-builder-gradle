@@ -20,13 +20,15 @@ import org.gradle.api.tasks.TaskProvider
 @CompileStatic
 class SlicePlugin implements Plugin<Project> {
 
+    SliceExtension slice
+
     void apply(Project project) {
 
         // def javaContainer = project.container(Java)
         def pythonContainer = project.container(PythonExtension, new PythonContainerFactory(project))
 
         // Create and install the extension object.
-        SliceExtension slice = project.extensions.create("slice", SliceExtension,
+        slice = project.extensions.create("slice", SliceExtension,
                 project, pythonContainer)
 
         configurePythonTasks(project, slice)
@@ -68,17 +70,16 @@ class SlicePlugin implements Plugin<Project> {
 //        })
 //    }
 
-    TaskProvider<PythonTask> createPythonTask(Project project, PythonExtension ext,
-                                              TaskProvider<DependencyTask> pretask) {
+    TaskProvider<PythonTask> createPythonTask(Project project, PythonExtension ext, TaskProvider<DependencyTask> pretask) {
         String taskName = "python" + ext.name.capitalize()
         project.tasks.register(taskName, PythonTask, new Action<PythonTask>() {
             @Override
             void execute(PythonTask t) {
                 t.with {
                     dependsOn(pretask)
-                    setSources(pretask.flatMap { it.outputFile })
+                    setSources(pretask.get().outputFile)
                     includeDirs.from(ext.includes)
-                    outputDir.set(ext.outputDir)
+                    outputDir.set(slice.outputDir)
                 }
             }
         })

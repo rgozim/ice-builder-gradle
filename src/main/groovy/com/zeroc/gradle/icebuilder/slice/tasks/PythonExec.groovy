@@ -21,7 +21,7 @@ class PythonExec extends AbstractExecTask {
     }
 
     def outputDir(File dir) {
-        return super.args("--output-dir=${dir}")
+        return super.args("--outputDir-dir=${dir}")
     }
 
     def iceFiles(FileCollection files) {

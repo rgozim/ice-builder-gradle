@@ -53,8 +53,8 @@ class JavaTask extends SliceTaskBase {
 //            // Add sources for processing
 //            cmd.addAll(filesForProcessing)
 //
-//            // Set the output directory
-//            cmd.add("--output-dir=${outputDir}")
+//            // Set the outputDir directory
+//            cmd.add("--outputDir-dir=${outputDir}")
 //            executeCommand(cmd)
 //        }
 //

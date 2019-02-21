@@ -7,6 +7,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
@@ -17,6 +18,7 @@ class PythonTask extends SliceTaskBase {
 
     private static final Logger Log = Logging.getLogger(PythonTask)
 
+    @Optional
     @Input
     final Property<String> prefix = project.objects.property(String)
 
@@ -60,8 +62,8 @@ class PythonTask extends SliceTaskBase {
                 cmd.add("--prefix=${prefix}")
             }
 
-            // Set the output directory
-            cmd.add("--output-dir=${outputDir}")
+            // Set the outputDir directory
+            cmd.add("--outputDir-dir=${outputDir}")
             executeCommand(cmd)
         }
 

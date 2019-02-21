@@ -11,13 +11,13 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 
@@ -49,12 +49,12 @@ abstract class SliceTaskBase extends DefaultTask {
         return outputDir
     }
 
-    @InputFiles
+    @Internal
     Set<File> getSourceSet() {
         sources.get().keySet()
     }
 
-    @InputFiles
+    @Internal
     Set<File> getDependencySet() {
         sources.get().getDependenciesToSource().keySet()
     }
@@ -80,15 +80,17 @@ abstract class SliceTaskBase extends DefaultTask {
         })
     }
 
+    void setSources(RegularFileProperty srcFile) {
+        sources.set(providers.provider(new Callable<DependencyMap>() {
+            @Override
+            DependencyMap call() throws Exception {
+                return DependencyParser.parseAsMap(srcFile.get().asFile.text)
+            }
+        }))
+    }
+
     void setSources(Provider<? extends RegularFile> xmlFile) {
         sources.set(xmlFile.map { DependencyParser.parseAsMap(it.asFile.text) })
-
-//        sources.set(providers.provider(new Callable<DependencyMap>() {
-//            @Override
-//            DependencyMap call() throws Exception {
-//                return DependencyParser.parseAsMap(xmlFile.get().asFile.text)
-//            }
-//        }))
     }
 
     protected String getOutputFileName(File file) {
@@ -98,7 +100,7 @@ abstract class SliceTaskBase extends DefaultTask {
     }
 
     protected void deleteOutputFile(File file) {
-        // Convert the input filename to the output filename and
+        // Convert the input filename to the outputDir filename and
         // delete that file
         def targetFile = project.file("$outputDir/${getOutputFileName(file)}")
         if (targetFile.exists()) {

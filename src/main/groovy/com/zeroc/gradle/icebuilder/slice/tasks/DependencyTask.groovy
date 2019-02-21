@@ -41,7 +41,7 @@ class DependencyTask extends DefaultTask {
         Process p = cmd.execute()
         p.waitForProcessOutput(sout, System.err)
 
-        // Write results to output file
+        // Write results to outputDir file
         writeFile(outputFile.get().asFile, sout.toString())
     }
 
