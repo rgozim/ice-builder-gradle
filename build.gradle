@@ -34,7 +34,7 @@ sourceSets {
     }
 }
 
-version  = "1.5.0-SNAPSHOT"
+version  = "1.5.0-m1"
 group = "com.zeroc.gradle.ice-builder"
 
 gradlePlugin {
