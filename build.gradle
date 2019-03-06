@@ -4,10 +4,20 @@
 //
 // **********************************************************************
 
+buildscript {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath('org.openmicroscopy:omero-artifact-plugin:5.5.0-SNAPSHOT')
+    }
+}
 
 apply plugin: 'groovy'
 apply plugin: 'java-gradle-plugin'
 apply plugin: 'maven-publish'
+apply plugin: 'org.openmicroscopy.plugin-project'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -56,19 +66,6 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             artifact sourceJar
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                username = System.getenv('ARTIFACTORY_USER') ?: "${findProperty('artifactory_user')}"
-                password = System.getenv('ARTIFACTORY_PASSWORD') ?: "${findProperty('artifactory_password')}"
-            }
-            if (version.endsWith('SNAPSHOT')) {
-                url "https://artifacts.openmicroscopy.org/artifactory/ome.snapshots"
-            } else {
-                url "https://artifacts.openmicroscopy.org/artifactory/ome.staging"
-            }
         }
     }
 }
