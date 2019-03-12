@@ -48,17 +48,17 @@ buildscript {
         }
     }
     dependencies {
-        classpath "gradle.plugin.com.zeroc.gradle.ice-builder:slice:1.4.5"
+        classpath "gradle.plugin.org.openmicroscopy.gradle.ice-builder:slice:1.5.0"
     }
 }
 
-apply plugin: "com.zeroc.gradle.ice-builder.slice"
+apply plugin: "org.openmicroscopy.gradle.ice-builder.slice"
 ```
 
 Build script snippet for new, incubating, plugin mechanism introduced in Gradle 2.1:
 ```
 plugins {
-    id "com.zeroc.gradle.ice-builder.slice" version "1.4.5"
+    id "org.openmicroscopy.gradle.ice-builder.slice" version "1.5.0"
 }
 ```
 

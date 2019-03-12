@@ -46,12 +46,12 @@ sourceSets {
 }
 
 version  = "1.5.0-m4"
-group = "com.zeroc.gradle.ice-builder"
+group = "org.openmicroscopy.gradle.ice-builder"
 
 gradlePlugin {
     plugins {
         IcePlugin {
-            id = 'com.zeroc.gradle.ice-builder.slice'
+            id = 'org.openmicroscopy.gradle.ice-builder.slice'
             implementationClass = 'com.zeroc.gradle.icebuilder.slice.SlicePlugin'
         }
     }
