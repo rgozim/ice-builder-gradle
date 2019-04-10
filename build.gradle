@@ -1,25 +1,18 @@
 //
 // Copyright (c) ZeroC, Inc. All rights reserved.
 //
-
-buildscript {
-    repositories {
-        mavenLocal()
-        gradlePluginPortal()
-        maven { url 'https://artifacts.openmicroscopy.org/artifactory/maven' }
-    }
-    dependencies {
-        classpath('org.openmicroscopy:omero-artifact-plugin:5.5.0-m4')
-    }
+plugins {
+    id 'groovy'
+    id "org.openmicroscopy.plugin-project" version "5.5.0-SNAPSHOT"
 }
 
-apply plugin: 'groovy'
-apply plugin: 'java-gradle-plugin'
-apply plugin: 'maven-publish'
-apply plugin: 'org.openmicroscopy.plugin-project'
+version  = "1.5.0-SNAPSHOT"
+group = "org.openmicroscopy.gradle.ice-builder"
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 repositories {
     mavenCentral()
@@ -28,23 +21,9 @@ repositories {
 dependencies {
     implementation 'commons-io:commons-io:2.6'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.github.stefanbirkner:system-rules:1.16.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.github.stefanbirkner:system-rules:1.16.0'
 }
-
-sourceSets {
-    main {
-        groovy {
-            srcDir "src/main/groovy"
-        }
-        resources {
-            srcDir "src/main/resources"
-        }
-    }
-}
-
-version  = "1.5.0-SNAPSHOT"
-group = "org.openmicroscopy.gradle.ice-builder"
 
 gradlePlugin {
     plugins {
