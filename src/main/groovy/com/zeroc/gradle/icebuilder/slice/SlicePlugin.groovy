@@ -4,34 +4,61 @@
 //
 // **********************************************************************
 
-package com.zeroc.gradle.icebuilder.slice;
+package com.zeroc.gradle.icebuilder.slice
 
-import org.gradle.api.logging.Logging
-import org.gradle.api.NamedDomainObjectContainer
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.DependencyResolveDetails
+import org.gradle.api.artifacts.ResolutionStrategy
+import org.gradle.api.logging.Logging
+import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.tasks.SourceSet
 
 class SlicePlugin implements Plugin<Project> {
     private static final def LOGGER = Logging.getLogger(SliceTask)
 
+    public static final String GROUP_SLICE = "slice"
+
+    public static final String TASK_COMPILE_SLICE = "compileSlice"
+
     void apply(Project project) {
-        project.tasks.create('compileSlice', SliceTask) {
-            group = "Slice"
+        project.tasks.register(TASK_COMPILE_SLICE, SliceTask) {
+            group = GROUP_SLICE
         }
 
         // Create and install the extension object.
-        def slice = project.extensions.create("slice", SliceExtension,
-                project.container(Java),
-                project.container(Python, { name -> new Python(name, project) })
-        )
-
-        // slice.extensions.add("python", project.container(Python))
+        SliceExtension slice =
+                project.extensions.create("slice", SliceExtension, project.container(Java))
 
         slice.extensions.create("freezej", Freezej,
                 project.container(Dict), project.container(Index))
 
-        slice.output = project.file("${project.buildDir}/generated-src")
+        // Set a resolution strategy for zeroc dependencies
+        Configuration compileClassPath =
+                project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+
+        compileClassPath.resolutionStrategy { ResolutionStrategy resolutionStrategy ->
+            resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == "com.zeroc") {
+                    details.useVersion slice.iceVersion
+                }
+            }
+        }
+
+        project.plugins.withType(JavaPlugin) {
+            slice.output = project.file("${project.projectDir}/src/generated/java")
+
+            project.tasks.named(JavaPlugin.COMPILE_JAVA_TASK_NAME).configure {
+                it.dependsOn("compileSlice")
+            }
+
+            JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
+            SourceSet main = javaConvention.sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+            main.java.srcDirs("src/main/ice36", slice.output)
+        }
 
         if (isAndroidProject(project)) {
             project.afterEvaluate {
@@ -39,14 +66,6 @@ class SlicePlugin implements Plugin<Project> {
                 // and add our dependency to the variant's javaCompiler task.
                 getAndroidVariants(project).all { variant ->
                     variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
-                }
-            }
-        } else {
-//            project.sourceSets.main.java.srcDir slice.output
-            project.afterEvaluate {
-                def compileJava = project.tasks.getByName("compileJava")
-                if (compileJava) {
-                    compileJava.dependsOn('compileSlice')
                 }
             }
         }

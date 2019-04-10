@@ -1,7 +1,12 @@
-// **********************************************************************
 //
 // Copyright (c) 2003-present ZeroC, Inc. All rights reserved.
 //
-// **********************************************************************
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        maven { url 'https://artifacts.openmicroscopy.org/artifactory/maven' }
+    }
+}
 
 rootProject.name = "slice"
