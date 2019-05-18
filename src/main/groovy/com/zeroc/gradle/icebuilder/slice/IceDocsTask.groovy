@@ -1,5 +1,6 @@
 package com.zeroc.gradle.icebuilder.slice
 
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
@@ -13,7 +14,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SourceTask
 import org.gradle.api.tasks.TaskAction
 
-class IceDocsTask extends SourceTask {
+class IceDocsTask extends DefaultTask {
 
     private static final def Log = Logging.getLogger(IceDocsTask)
 
@@ -56,13 +57,16 @@ class IceDocsTask extends SourceTask {
     @Optional
     FileCollection includeDirs
 
+    @Input
+    @Optional
+    FileCollection sourceDirs
+
+    @InputFile
+    @Optional
+    final RegularFileProperty src = project.objects.fileProperty()
+
     // Change this to a configuration
     SliceExtension sliceExt = project.slice
-
-    IceDocsTask() {
-        super()
-        setIncludes(["**/*.ice"])
-    }
 
     @TaskAction
     void apply() {
@@ -98,9 +102,16 @@ class IceDocsTask extends SourceTask {
         }
 
         // Add the source files
-        source.files.each {
-            cmd.add(String.valueOf(it))
+        if (sourceDirs) {
+            sourceDirs.each { dir ->
+                new File(dir.absolutePath).traverse(type: groovy.io.FileType.FILES) { it ->
+                    if (it.name.endsWith('.ice')) {
+                        cmd.add(String.valueOf(it))
+                    }
+                }
+            }
         }
+
         executeCommand(cmd)
     }
 
