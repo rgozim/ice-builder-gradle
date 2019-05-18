@@ -11,7 +11,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.SourceTask
 import org.gradle.api.tasks.TaskAction
 
 class IceDocsTask extends DefaultTask {
