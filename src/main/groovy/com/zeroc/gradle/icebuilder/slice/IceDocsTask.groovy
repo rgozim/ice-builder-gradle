@@ -93,7 +93,7 @@ class IceDocsTask extends DefaultTask {
         }
 
         if (indexFooter.isPresent()) {
-            cmd.addAll(["--indexhdr", String.valueOf(indexFooter.asFile.get())])
+            cmd.addAll(["--indexftr", String.valueOf(indexFooter.asFile.get())])
         }
 
         if (debug.getOrElse(false)) {
