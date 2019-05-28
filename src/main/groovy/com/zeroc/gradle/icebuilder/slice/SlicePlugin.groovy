@@ -11,7 +11,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencyResolveDetails
-import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
@@ -36,36 +35,36 @@ class SlicePlugin implements Plugin<Project> {
         slice.extensions.create("freezej", Freezej,
                 project.container(Dict), project.container(Index))
 
-        // Set a resolution strategy for zeroc dependencies
-        Configuration compileClassPath =
-                project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
-
-        compileClassPath.resolutionStrategy { ResolutionStrategy resolutionStrategy ->
-            resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-                if (details.requested.group == "com.zeroc") {
-                    details.useVersion slice.iceVersion
-                }
-            }
-        }
-
-        project.plugins.withType(JavaPlugin) {
-            slice.output = project.file("${project.projectDir}/src/generated/java")
-
-            project.tasks.named(JavaPlugin.COMPILE_JAVA_TASK_NAME).configure {
-                it.dependsOn("compileSlice")
-            }
-
-            JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
-            SourceSet main = javaConvention.sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
-            main.java.srcDirs("src/main/ice36", slice.output)
-        }
-
         if (isAndroidProject(project)) {
             project.afterEvaluate {
                 // Android projects do not define a 'compileJava' task. We wait until the project is evaluated
                 // and add our dependency to the variant's javaCompiler task.
                 getAndroidVariants(project).all { variant ->
                     variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
+                }
+            }
+        } else {
+            project.plugins.withType(JavaPlugin) {
+                // Set a resolution strategy for zeroc dependencies
+                // Configuration compileClassPath = project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                project.configurations.all { Configuration config ->
+                    config.resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                        if (details.requested.group == "com.zeroc") {
+                            details.useVersion slice.iceVersion
+                        }
+                    }
+                }
+
+                slice.output = project.file("${project.projectDir}/src/generated/java")
+
+                // Add slice.output as java source dir
+                JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
+                SourceSet main = javaConvention.sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+                main.java.srcDirs(slice.output)
+
+                // Task compileJava triggers compileSlice
+                project.tasks.named(JavaPlugin.COMPILE_JAVA_TASK_NAME).configure {
+                    it.dependsOn(TASK_COMPILE_SLICE)
                 }
             }
         }
