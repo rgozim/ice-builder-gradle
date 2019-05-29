@@ -10,6 +10,10 @@ import org.gradle.api.GradleException
 import org.gradle.api.logging.Logging
 import org.gradle.api.NamedDomainObjectContainer
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 class SliceExtension {
 
     final NamedDomainObjectContainer<Java> java
@@ -117,24 +121,21 @@ class SliceExtension {
                 //
                 // Guess the slice and jar directories of the Ice distribution we are using
                 //
-                def sliceDirectories = [
-                    [_iceHome, "share", "slice"],                         // Common shared slice directory
-                    [_iceHome, "share", "ice", "slice"],                  // Ice >= 3.7
-                    [_iceHome, "share", "Ice-${_iceVersion}", "slice"],   // Ice < 3.7
-                    [_iceHome, "slice"]                                   // Opt/source installs & Windows distribution
+                List<Path> sliceDirectories = [
+                    Paths.get(_iceHome, "share", "slice"),                         // Common shared slice directory
+                    Paths.get(_iceHome, "share", "ice", "slice"),                  // Ice >= 3.7
+                    Paths.get(_iceHome, "share", "Ice-${_iceVersion}", "slice"),   // Ice < 3.7
+                    Paths.get(_iceHome, "slice")                                   // Opt/source installs & Windows distribution
                 ]
 
-                def jarDirectories = [
-                    [_iceHome, "share", "java"],                          // Default usr install
-                    [_iceHome, _compat ? "java-compat" : "java", "lib"],  // Source distribution
-                    [_iceHome, "lib"]                                     // Opt style install & Windows distribution
+                List<Path> jarDirectories = [
+                    Paths.get(_iceHome, "share", "java"),                          // Default usr install
+                    Paths.get(_iceHome, _compat ? "java-compat" : "java", "lib"),  // Source distribution
+                    Paths.get(_iceHome, "lib")                                     // Opt style install & Windows distribution
                 ]
 
-                def sliceDirCandidates = sliceDirectories.collect { it.join(File.separator) }
-                def jarDirCandidates = jarDirectories.collect { it.join(File.separator) }
-
-                _sliceDir = sliceDirCandidates.find { new File(it).exists() }
-                _jarDir = jarDirCandidates.find { new File(it).exists() }
+                _sliceDir = sliceDirectories.find { Files.exists(it) }.toString()
+                _jarDir = jarDirectories.find { Files.exists(it) }.toString()
 
                 if (!_sliceDir) {
                     LOGGER.warn("Unable to locate slice directory in iceHome (${iceHome})")
@@ -160,10 +161,10 @@ class SliceExtension {
         //
         // Query Win32 registry key and return the InstallDir value for the given key
         //
-        def getWin32InstallDir(key) {
-            def sout = new StringBuffer()
-            def serr = new StringBuffer()
-            def p = ["reg", "query", key, "/v", "InstallDir"].execute()
+        String getWin32InstallDir(key) {
+            StringBuffer sout = new StringBuffer()
+            StringBuffer serr = new StringBuffer()
+            Process p = ["reg", "query", key, "/v", "InstallDir", "/reg:64"].execute()
             p.waitForProcessOutput(sout, serr)
             if (p.exitValue() != 0) {
                 return null
@@ -174,11 +175,12 @@ class SliceExtension {
         //
         // Query Win32 registry and return the path of the latest Ice version available.
         //
-        def getWin32IceHome() {
-            def sout = new StringBuffer()
-            def serr = new StringBuffer()
+        String getWin32IceHome() {
+            StringBuffer sout = new StringBuffer()
+            StringBuffer serr = new StringBuffer()
 
-            def p = ["reg", "query", "HKLM\\Software\\ZeroC"].execute()
+            List<String> cmd = ["reg", "query", "HKLM\\Software\\ZeroC", "/reg:64"]
+            Process p = cmd.execute()
             p.waitForProcessOutput(sout, serr)
             if (p.exitValue() != 0) {
                 //
@@ -187,16 +189,17 @@ class SliceExtension {
                 return ""
             }
 
-            def iceInstallDir = null
+            String iceInstallDir = null
             def iceVersion = null
 
-            sout.toString().split("\\r?\\n").each {
+            String output = sout.toString()
+            output.split("\\r?\\n").each {
                 try{
                     if (it.indexOf("HKEY_LOCAL_MACHINE\\Software\\ZeroC\\Ice") != -1) {
                         def installDir = getWin32InstallDir(it)
                         if (installDir != null) {
                             def version = getIceVersion(installDir)
-                            if(iceVersion == null || compareVersions(version, iceVersion) == 1) {
+                            if (iceVersion == null || compareVersions(version, iceVersion) == 1) {
                                 iceInstallDir = installDir
                                 iceVersion = version
                             }
@@ -247,14 +250,14 @@ class SliceExtension {
         // Return the path to the specified slice compiler (slice2java|slice2freezej) with respect to
         // the specified homeDir (iceHome|freezeHome)
         //
-        def getSliceCompiler(name, homeDir) {
-            def os = System.properties['os.name']
+        def getSliceCompiler(String name, String homeDir) {
+            String os = System.properties['os.name']
             //
             // Check if we are using a Slice source distribution
             //
-            def srcDist = new File([homeDir, "java", "build.gradle"].join(File.separator)).exists()
-            def compilerName = os.contains('Windows') ? "${name}.exe" : name
-            def sliceCompiler = null
+            boolean srcDist = Files.exists(Paths.get(homeDir, "java", "build.gradle"))
+            String compilerName = os.contains('Windows') ? name + ".exe" : name
+            Path sliceCompiler = null
 
             //
             // Set the location of the sliceCompiler executable
@@ -268,20 +271,21 @@ class SliceExtension {
                 // For Windows binary distribution we first check for <IceHome>\tools that correspond with NuGet package
                 // layout.
                 //
-                def basePath = srcDist ? [homeDir, "cpp", "bin", _cppPlatform, _cppConfiguration] : [homeDir, "tools"]
-                basePath = basePath.join(File.separator)
-                if(new File(basePath).exists()) {
-                    sliceCompiler = [basePath, compilerName].join(File.separator)
+                Path basePath = srcDist ?
+                        Paths.get(homeDir, "cpp", "bin", _cppPlatform, _cppConfiguration) :
+                        Paths.get(homeDir, "tools")
+                if (Files.exists(basePath)) {
+                    sliceCompiler = basePath.resolve(compilerName)
                 }
             }
 
             if (sliceCompiler == null) {
                 sliceCompiler = srcDist ?
-                    [homeDir, "cpp", "bin", compilerName].join(File.separator) :
-                    [homeDir, "bin", compilerName].join(File.separator)
+                        Paths.get(homeDir, "cpp", "bin", compilerName) :
+                        Paths.get(homeDir, "bin", compilerName)
             }
 
-            return sliceCompiler
+            return sliceCompiler.toString()
         }
     }
 
