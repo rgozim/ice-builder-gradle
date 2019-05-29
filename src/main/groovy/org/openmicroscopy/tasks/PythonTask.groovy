@@ -1,5 +1,6 @@
-package com.zeroc.gradle.icebuilder.slice
+package org.openmicroscopy.tasks
 
+import com.zeroc.gradle.icebuilder.slice.SliceExtension
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
