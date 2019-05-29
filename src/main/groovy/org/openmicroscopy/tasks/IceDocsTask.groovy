@@ -1,20 +1,22 @@
 package org.openmicroscopy.tasks
 
 import com.zeroc.gradle.icebuilder.slice.SliceExtension
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.SourceTask
 import org.gradle.api.tasks.TaskAction
 
-class IceDocsTask extends DefaultTask {
+class IceDocsTask extends SourceTask {
 
     private static final def Log = Logging.getLogger(IceDocsTask)
 
@@ -50,36 +52,34 @@ class IceDocsTask extends DefaultTask {
     @Optional
     final RegularFileProperty indexFooter = project.objects.fileProperty()
 
+    @InputFiles
+    @Optional
+    final ListProperty<Directory> includeDirs = project.objects.listProperty(Directory)
+
     @OutputDirectory
     final DirectoryProperty outputDir = project.objects.directoryProperty()
-
-    @Input
-    @Optional
-    FileCollection includeDirs
-
-    @Input
-    @Optional
-    FileCollection sourceDirs
-
-    @InputFile
-    @Optional
-    final RegularFileProperty src = project.objects.fileProperty()
 
     // Change this to a configuration
     SliceExtension sliceExt = project.slice
 
+    IceDocsTask() {
+        super()
+        setIncludes(["**/*.ice"])
+    }
+
     @TaskAction
     void apply() {
-        List<String> cmd = ["slice2html"]
-
-        cmd.addAll(["-I", sliceExt.sliceDir])
-
-        if (includeDirs) {
-            // Add any additional includes
-            includeDirs.each { dir -> cmd.addAll(["-I", "${dir}"]) }
-        }
+        List<String> cmd = ["slice2html", "-I" + sliceExt.sliceDir]
 
         cmd.addAll(["--output-dir", String.valueOf(outputDir.asFile.get())])
+
+        List<Directory> includeDirsList = includeDirs.getOrNull()
+        if (includeDirsList) {
+            // Add any additional includes
+            includeDirsList.each { Directory dir ->
+                cmd.add("-I" + dir.asFile)
+            }
+        }
 
         if (header.isPresent()) {
             cmd.addAll(["--hdr", String.valueOf(header.asFile.get())])
@@ -97,27 +97,22 @@ class IceDocsTask extends DefaultTask {
             cmd.addAll(["--indexftr", String.valueOf(indexFooter.asFile.get())])
         }
 
-        if (debug.getOrElse(false)) {
-            cmd.add("-d")
+        // Add the source files
+        source.files.each {
+            cmd.add(String.valueOf(it))
         }
 
-        // Add the source files
-        if (sourceDirs) {
-            sourceDirs.each { dir ->
-                new File(dir.absolutePath).traverse(type: groovy.io.FileType.FILES) { it ->
-                    if (it.name.endsWith('.ice')) {
-                        cmd.add(String.valueOf(it))
-                    }
-                }
-            }
+        if (debug.getOrElse(false)) {
+            cmd.add("-d")
         }
 
         executeCommand(cmd)
     }
 
     void executeCommand(List cmd) {
+        def sout = new StringBuffer()
         def p = cmd.execute()
-        p.waitForProcessOutput(new StringBuffer(), System.err)
+        p.waitForProcessOutput(sout, System.err)
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }
