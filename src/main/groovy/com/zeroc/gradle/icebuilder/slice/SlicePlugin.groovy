@@ -55,7 +55,8 @@ class SlicePlugin implements Plugin<Project> {
                     }
                 }
 
-                slice.output = project.file("${project.projectDir}/src/generated/java")
+                // Set output dir to be 'build/slice/java'
+                slice.output = project.file("${project.buildDir}/slice/java")
 
                 // Add slice.output as java source dir
                 JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
