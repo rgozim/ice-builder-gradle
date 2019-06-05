@@ -47,7 +47,7 @@ class SlicePlugin implements Plugin<Project> {
             project.plugins.withType(JavaPlugin) {
                 // Set a resolution strategy for zeroc dependencies
                 // Configuration compileClassPath = project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
-                project.configurations.all { Configuration config ->
+                project.configurations.configureEach { Configuration config ->
                     config.resolutionStrategy.eachDependency { DependencyResolveDetails details ->
                         if (details.requested.group == "com.zeroc") {
                             details.useVersion slice.iceVersion
