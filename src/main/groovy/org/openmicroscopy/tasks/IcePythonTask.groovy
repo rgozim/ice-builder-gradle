@@ -15,7 +15,7 @@ class IcePythonTask extends IceTask {
     @Optional
     final Property<String> prefix = project.objects.property(String)
 
-    IcePythonTask(String iceCommand) {
+    IcePythonTask() {
         super("slice2py")
     }
 

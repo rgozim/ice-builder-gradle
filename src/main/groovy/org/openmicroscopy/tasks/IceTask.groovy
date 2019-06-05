@@ -4,7 +4,6 @@ import com.zeroc.gradle.icebuilder.slice.SliceExtension
 import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -19,7 +18,7 @@ abstract class IceTask extends SourceTask {
     @Optional
     final Property<Boolean> debug = project.objects.property(Boolean)
 
-    @Input
+    @InputFiles
     @Optional
     final ListProperty<Directory> includeDirs = project.objects.listProperty(Directory)
 
@@ -73,21 +72,6 @@ abstract class IceTask extends SourceTask {
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }
-    }
-
-    /**
-     * This method exists so incremental build support will kick in if the
-     * contents of any of those directories change.
-     * @return collection of all files in directories
-     */
-    @InputFiles
-    private FileCollection getIncludedFiles() {
-        FileCollection files = project.files()
-        List<Directory> dirs = includeDirs.get()
-        for (Directory dir : dirs) {
-            files = files + project.fileTree(dir)
-        }
-        return files
     }
 
 }

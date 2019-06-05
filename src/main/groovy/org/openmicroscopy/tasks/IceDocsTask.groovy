@@ -54,12 +54,8 @@ class IceDocsTask extends IceTask {
             cmd.addAll(["--ftr", String.valueOf(footer.asFile.get())])
         }
 
-        if (indexHeader.isPresent()) {
-            cmd.addAll(["--indexhdr", String.valueOf(indexHeader.asFile.get())])
-        }
-
         if (indexFooter.isPresent()) {
-            cmd.addAll(["--indexftr", String.valueOf(indexFooter.asFile.get())])
+            cmd.addAll(["--indexhdr", String.valueOf(indexFooter.asFile.get())])
         }
 
         // Add the source files
