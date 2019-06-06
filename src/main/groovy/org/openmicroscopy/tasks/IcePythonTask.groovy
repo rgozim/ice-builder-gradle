@@ -2,6 +2,7 @@ package org.openmicroscopy.tasks
 
 
 import org.apache.commons.io.FilenameUtils
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -30,17 +31,27 @@ class IcePythonTask extends IceTask {
         }
 
         // Input file has changed, so we convert it.
-        List<String> filesForProcessing = []
+        List<File> filesForProcessing = []
         inputs.outOfDate { InputFileDetails outOfDate ->
-            // Add input file for processing
-            filesForProcessing.add(String.valueOf(outOfDate.file))
+            filesForProcessing.add(outOfDate.file)
         }
 
         if (!filesForProcessing.isEmpty()) {
+            // Create dependency graph
+            ManyToMany<File, File> dependencyGraph = createDependencyGraph()
+
+            Set<File> filesForCompile = []
+            filesForProcessing.each { File file ->
+                filesForCompile.addAll(dependencyGraph.getKeys(file))
+                filesForCompile.addAll(dependencyGraph.getValues(file))
+            }
+
             List<String> cmd = createBaseCompileSpec()
 
             // Add files for processing
-            cmd.addAll(filesForProcessing)
+            filesForCompile.each { File file ->
+                cmd.add(String.valueOf(file))
+            }
 
             if (prefix.isPresent()) {
                 // Set a prefix
@@ -51,8 +62,57 @@ class IcePythonTask extends IceTask {
         }
 
         inputs.removed { change ->
+            // Delete source file
             deleteOutputFile(change.file)
         }
+    }
+
+    ManyToMany<File, File> createDependencyGraph() {
+        List<String> cmd = createBaseCompileSpec()
+
+        // Add the source files
+        source.files.each {
+            cmd.add(String.valueOf(it))
+        }
+
+        // We only want dependency printout
+        cmd.add("--depend-xml")
+
+        StringBuffer sout = new StringBuffer()
+        cmd.execute().waitForProcessOutput(sout, System.err)
+
+        return parseSliceDependencyXML(sout)
+    }
+
+    // Parse the dependency XML which is of the format:
+    //
+    // <dependencies>
+    //   <source name="A.ice">
+    //     <dependsOn name="Hello.ice"/>
+    //   </source>
+    //   <source name="Hello.ice">
+    //   </source>
+    // </dependencies>
+    private ManyToMany<File, File> parseSliceDependencyXML(StringBuffer sout) {
+        def xml = new XmlSlurper().parseText(sout.toString())
+        if (xml.name() != "dependencies") {
+            throw new GradleException("malformed XML")
+        }
+
+        ManyToMany<File, File> results = new ManyToMany<>()
+        xml.children().each {
+            if (it.name() == "source") {
+                File source = new File(it.attributes().get("name"))
+                it.children().each {
+                    if (it.name() == "dependsOn") {
+                        File dependsOn = new File(it.attributes().get("name"))
+                        results.put(source, dependsOn)
+                    }
+                }
+            }
+        }
+
+        return results
     }
 
     void outputDir(String dir) {
