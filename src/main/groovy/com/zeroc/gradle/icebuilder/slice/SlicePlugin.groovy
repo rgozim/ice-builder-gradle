@@ -21,15 +21,17 @@ class SlicePlugin implements Plugin<Project> {
 
     public static final String GROUP_SLICE = "slice"
 
+    public static final String EXTENSION_SLICE = "slice"
+
     public static final String TASK_COMPILE_SLICE = "compileSlice"
 
     void apply(Project project) {
-        project.tasks.create('compileSlice', SliceTask) {
-            group = "Slice"
+        project.tasks.create(TASK_COMPILE_SLICE, SliceTask) {
+            group = GROUP_SLICE
         }
 
         // Create and install the extension object.
-        def slice = project.extensions.create("slice", SliceExtension, project.container(Java))
+        def slice = project.extensions.create(EXTENSION_SLICE, SliceExtension, project.container(Java))
 
         slice.extensions.create("freezej", Freezej,
                 project.container(Dict), project.container(Index))
@@ -39,7 +41,7 @@ class SlicePlugin implements Plugin<Project> {
                 // Android projects do not define a 'compileJava' task. We wait until the project is evaluated
                 // and add our dependency to the variant's javaCompiler task.
                 getAndroidVariants(project).all { variant ->
-                    variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
+                    variant.registerJavaGeneratingTask(project.tasks.getByName(TASK_COMPILE_SLICE), slice.output)
                 }
             }
         } else {
