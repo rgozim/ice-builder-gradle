@@ -9,11 +9,14 @@ package com.zeroc.gradle.icebuilder.slice
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.tasks.SourceSet
 
 class SlicePlugin implements Plugin<Project> {
@@ -24,8 +27,8 @@ class SlicePlugin implements Plugin<Project> {
     public static final String TASK_COMPILE_SLICE = "compileSlice"
 
     void apply(Project project) {
-        project.tasks.create('compileSlice', SliceTask) {
-            group = "Slice"
+        project.tasks.create(TASK_COMPILE_SLICE, SliceTask) {
+            group = GROUP_SLICE
         }
 
         // Create and install the extension object.
@@ -39,7 +42,7 @@ class SlicePlugin implements Plugin<Project> {
                 // Android projects do not define a 'compileJava' task. We wait until the project is evaluated
                 // and add our dependency to the variant's javaCompiler task.
                 getAndroidVariants(project).all { variant ->
-                    variant.registerJavaGeneratingTask(project.tasks.getByName('compileSlice'), slice.output)
+                    variant.registerJavaGeneratingTask(project.tasks.getByName(TASK_COMPILE_SLICE), slice.output)
                 }
             }
         } else {
@@ -50,6 +53,22 @@ class SlicePlugin implements Plugin<Project> {
                     config.resolutionStrategy.eachDependency { DependencyResolveDetails details ->
                         if (details.requested.group == "com.zeroc") {
                             details.useVersion slice.iceVersion
+                        }
+                    }
+                }
+
+                project.plugins.withType(MavenPublishPlugin) {
+                    project.afterEvaluate {
+                        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom task ->
+                            task.pom.withXml { XmlProvider xml ->
+                                NodeList dependencies = xml.asNode().get("dependencies") as NodeList
+
+                                dependencies.dependency.each { Node node ->
+                                    if (node.groupId.text() == "com.zeroc") {
+                                        node.appendNode("version", slice.iceVersion)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -3,7 +3,7 @@
 //
 plugins {
     id 'groovy'
-    id "org.openmicroscopy.plugin-project" version "5.5.0-m4"
+    id "org.openmicroscopy.plugin-project" version "5.5.3"
 }
 
 version  = "1.5.2-SNAPSHOT"
