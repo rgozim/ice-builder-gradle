@@ -6,7 +6,7 @@ plugins {
     id "org.openmicroscopy.plugin-project" version "5.5.3"
 }
 
-version  = "1.5.2"
+version = "1.5.2"
 group = "org.openmicroscopy.gradle.ice-builder"
 
 java {
@@ -31,6 +31,10 @@ gradlePlugin {
         IcePlugin {
             id = 'org.openmicroscopy.gradle.ice-builder.slice'
             implementationClass = 'com.zeroc.gradle.icebuilder.slice.SlicePlugin'
+        }
+        IceDependencyStrategyPlugin {
+            id = 'org.openmicroscopy.gradle.ice-builder.dependency-strategy'
+            implementationClass = 'org.openmicroscopy.plugins.SliceDependencyStrategyPlugin'
         }
     }
 }

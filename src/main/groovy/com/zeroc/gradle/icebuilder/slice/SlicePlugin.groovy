@@ -6,17 +6,11 @@
 
 package com.zeroc.gradle.icebuilder.slice
 
-
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.XmlProvider
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
-import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.tasks.SourceSet
 
 class SlicePlugin implements Plugin<Project> {
@@ -47,32 +41,6 @@ class SlicePlugin implements Plugin<Project> {
             }
         } else {
             project.plugins.withType(JavaPlugin) {
-                // Set a resolution strategy for zeroc dependencies
-                // Configuration compileClassPath = project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
-                project.configurations.configureEach { Configuration config ->
-                    config.resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-                        if (details.requested.group == "com.zeroc") {
-                            details.useVersion slice.iceVersion
-                        }
-                    }
-                }
-
-                project.plugins.withType(MavenPublishPlugin) {
-                    project.afterEvaluate {
-                        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom task ->
-                            task.pom.withXml { XmlProvider xml ->
-                                NodeList dependencies = xml.asNode().get("dependencies") as NodeList
-
-                                dependencies.dependency.each { Node node ->
-                                    if (node.groupId.text() == "com.zeroc") {
-                                        node.appendNode("version", slice.iceVersion)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 // Set output dir to be 'build/slice/java'
                 slice.output = project.file("${project.buildDir}/slice/java")
 
