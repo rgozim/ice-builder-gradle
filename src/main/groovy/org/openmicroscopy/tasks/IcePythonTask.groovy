@@ -21,50 +21,20 @@ class IcePythonTask extends IceTask {
     }
 
     @TaskAction
-    void action(IncrementalTaskInputs inputs) {
-        // If the user for example used --rerun-tasks
-        // this task is not incremental. Only
-        // inputs.outOfDate is executed, so we must first
-        // remove all output files.
-        if (!inputs.incremental) {
-            project.delete(outputDir.asFile.get().listFiles())
+    void action() {
+        List<String> cmd = createBaseCompileSpec()
+
+        // Add files for processing
+        getSource().each { File file ->
+            cmd.add(String.valueOf(file))
         }
 
-        // Input file has changed, so we convert it.
-        List<File> filesForProcessing = []
-        inputs.outOfDate { InputFileDetails outOfDate ->
-            filesForProcessing.add(outOfDate.file)
+        if (prefix.isPresent()) {
+            // Set a prefix
+            cmd.add("--prefix=" + prefix.get())
         }
 
-        if (!filesForProcessing.isEmpty()) {
-            // Create dependency graph
-            ManyToMany<File, File> dependencyGraph = createDependencyGraph()
-
-            Set<File> filesForCompile = []
-            filesForProcessing.each { File file ->
-                filesForCompile.addAll(dependencyGraph.getKeys(file))
-                filesForCompile.addAll(dependencyGraph.getValues(file))
-            }
-
-            List<String> cmd = createBaseCompileSpec()
-
-            // Add files for processing
-            filesForCompile.each { File file ->
-                cmd.add(String.valueOf(file))
-            }
-
-            if (prefix.isPresent()) {
-                // Set a prefix
-                cmd.add("--prefix=" + prefix.get())
-            }
-
-            executeCommand(cmd)
-        }
-
-        inputs.removed { change ->
-            // Delete source file
-            deleteOutputFile(change.file)
-        }
+        executeCommand(cmd)
     }
 
     ManyToMany<File, File> createDependencyGraph() {

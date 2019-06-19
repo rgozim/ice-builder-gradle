@@ -37,7 +37,7 @@ abstract class IceTask extends SourceTask {
     IceTask(String iceCommand) {
         super()
         this.iceCommand = iceCommand
-        this.setIncludes(["**/*.ice"])
+        this.setIncludes(["*.ice"])
     }
 
     List<String> createBaseCompileSpec() {
