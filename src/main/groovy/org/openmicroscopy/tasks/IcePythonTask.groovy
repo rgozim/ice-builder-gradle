@@ -41,7 +41,7 @@ class IcePythonTask extends IceTask {
         List<String> cmd = createBaseCompileSpec()
 
         // Add the source files
-        source.files.each {
+        getSource().files.each {
             cmd.add(String.valueOf(it))
         }
 

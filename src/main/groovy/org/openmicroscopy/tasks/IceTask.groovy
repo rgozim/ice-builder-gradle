@@ -1,43 +1,63 @@
 package org.openmicroscopy.tasks
 
 import com.zeroc.gradle.icebuilder.slice.SliceExtension
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.SourceTask
+import org.gradle.api.tasks.SkipWhenEmpty
 
-abstract class IceTask extends SourceTask {
+abstract class IceTask extends DefaultTask {
 
-    @Input
-    @Optional
-    final Property<Boolean> debug = project.objects.property(Boolean)
+    private final Property<Boolean> debug = project.objects.property(Boolean)
 
-    @InputFiles
-    @Optional
-    final ListProperty<Directory> includeDirs = project.objects.listProperty(Directory)
+    private final DirectoryProperty outputDir = project.objects.directoryProperty()
 
-    @OutputDirectory
-    final DirectoryProperty outputDir = project.objects.directoryProperty()
+    private final ListProperty<Directory> includeDirs = project.objects.listProperty(Directory)
+
+    private final ConfigurableFileCollection source = project.files()
+
+    private final String iceCommand
 
     // Change this to a configuration
     SliceExtension sliceExt = project.slice
 
-    private final String iceCommand
-
-    private IceTask() {
-        super()
-    }
-
     IceTask(String iceCommand) {
         super()
         this.iceCommand = iceCommand
-        this.setIncludes(["*.ice"])
+    }
+
+    @InputFiles
+    @SkipWhenEmpty
+    FileCollection getSource() {
+        return source.filter { File file ->
+            file.name.endsWith(".ice")
+        }
+    }
+
+    @Input
+    @Optional
+    Property<Boolean> getDebug() {
+        return debug
+    }
+
+    @InputFiles
+    @Optional
+    ListProperty<Directory> getIncludeDirs() {
+        return includeDirs
+    }
+
+    @OutputDirectory
+    DirectoryProperty getOutputDir() {
+        return outputDir
     }
 
     List<String> createBaseCompileSpec() {
@@ -72,6 +92,29 @@ abstract class IceTask extends SourceTask {
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }
+    }
+
+    void source(Object... files) {
+        this.source.from(files)
+    }
+
+    void source(Iterable<?> files) {
+        this.source.from(files)
+    }
+
+    void setSource(Object... files) {
+        this.source.setFrom(files)
+    }
+
+    void setSource(Iterable<?> files) {
+        this.source.setFrom(files)
+    }
+
+    void setIncludeDirs(String... dirs) {
+        List<Directory> list = dirs.collect {
+            project.layout.projectDirectory.dir(it)
+        }
+        this.includeDirs.addAll(list)
     }
 
 }

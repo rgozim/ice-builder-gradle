@@ -59,7 +59,7 @@ class IceDocsTask extends IceTask {
         }
 
         // Add the source files
-        source.files.each {
+        getSource().each {
             cmd.add(String.valueOf(it))
         }
 
