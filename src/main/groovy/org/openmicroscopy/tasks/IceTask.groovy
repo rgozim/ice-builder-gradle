@@ -6,6 +6,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -27,11 +28,7 @@ abstract class IceTask extends DefaultTask {
     @Optional
     final ListProperty<Directory> includeDirs = project.objects.listProperty(Directory)
 
-    @InputFiles
-    @SkipWhenEmpty
-    final ConfigurableFileCollection source = project.files().filter { File file ->
-        file.name.endsWith(".ice")
-    }
+    private final ConfigurableFileCollection source = project.files()
 
     private final String iceCommand
 
@@ -75,6 +72,30 @@ abstract class IceTask extends DefaultTask {
         if (p.exitValue() != 0) {
             throw new GradleException("${cmd[0]} failed with exit code: ${p.exitValue()}")
         }
+    }
+
+    @InputFiles
+    @SkipWhenEmpty
+    FileCollection getSource() {
+        source.filter { File file ->
+            file.name.endsWith(".ice")
+        }
+    }
+
+    void source(Object... files) {
+        this.source.from(files)
+    }
+
+    void source(Iterable<?> files) {
+        this.source.from(files)
+    }
+
+    void setSource(Object... files) {
+        this.source.setFrom(files)
+    }
+
+    void setSource(Iterable<?> files) {
+        this.source.setFrom(files)
     }
 
     void includeDirs(String... dirs) {
