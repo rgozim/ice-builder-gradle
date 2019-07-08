@@ -6,11 +6,10 @@
 
 package com.zeroc.gradle.icebuilder.slice
 
+import org.junit.Ignore
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
-import static org.junit.Assume.assumeTrue
-
+@Ignore
 class SlicePluginWarningTest extends TestCase {
 
     @Test

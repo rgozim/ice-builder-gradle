@@ -7,11 +7,13 @@
 package com.zeroc.gradle.icebuilder.slice
 
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 import static org.junit.Assert.assertTrue
 import static org.junit.Assume.assumeTrue
 
+@Ignore
 class Slice2JavaCompatDefine extends TestCase {
 
     @Before

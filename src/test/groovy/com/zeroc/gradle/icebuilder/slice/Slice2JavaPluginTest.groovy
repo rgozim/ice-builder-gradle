@@ -6,11 +6,12 @@
 
 package com.zeroc.gradle.icebuilder.slice
 
+import org.junit.Ignore
 import org.junit.Test
-import org.gradle.testfixtures.ProjectBuilder
 
 import static org.junit.Assert.assertTrue
 
+@Ignore
 class Slice2JavaPluginTest extends TestCase {
 
     @Test

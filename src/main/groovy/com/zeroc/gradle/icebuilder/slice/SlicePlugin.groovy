@@ -42,7 +42,7 @@ class SlicePlugin implements Plugin<Project> {
         } else {
             project.plugins.withType(JavaPlugin) {
                 // Set output dir to be 'build/slice/java'
-                slice.output = project.file("${project.buildDir}/slice/java")
+                slice.output = project.file("${project.buildDir}/generated/slice/java")
 
                 // Add slice.output as java source dir
                 JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
