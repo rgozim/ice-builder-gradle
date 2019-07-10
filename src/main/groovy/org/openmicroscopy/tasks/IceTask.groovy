@@ -11,6 +11,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SkipWhenEmpty
@@ -32,7 +33,7 @@ abstract class IceTask extends DefaultTask {
 
     private final String iceCommand
 
-    // Change this to a configuration
+    @Internal
     SliceExtension sliceExt = project.slice
 
     IceTask(String iceCommand) {
