@@ -18,6 +18,10 @@ class SlicePlugin implements Plugin<Project> {
 
     public static final String GROUP_SLICE = "slice"
 
+    public static final String EXTENSION_SLICE = "slice"
+
+    public static final String EXTENSION_FREEZEJ = "freezej"
+
     public static final String TASK_COMPILE_SLICE = "compileSlice"
 
     void apply(Project project) {
@@ -26,9 +30,10 @@ class SlicePlugin implements Plugin<Project> {
         }
 
         // Create and install the extension object.
-        def slice = project.extensions.create("slice", SliceExtension, project.container(Java))
+        SliceExtension slice =
+                project.extensions.create(EXTENSION_SLICE, SliceExtension, project.container(Java))
 
-        slice.extensions.create("freezej", Freezej,
+        slice.extensions.create(EXTENSION_FREEZEJ, Freezej,
                 project.container(Dict), project.container(Index))
 
         if (isAndroidProject(project)) {
