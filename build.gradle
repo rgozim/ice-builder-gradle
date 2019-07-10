@@ -7,6 +7,7 @@ plugins {
 }
 
 group = "org.openmicroscopy.gradle.ice-builder"
+version = "5.5.2-SNAPSHOT"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8

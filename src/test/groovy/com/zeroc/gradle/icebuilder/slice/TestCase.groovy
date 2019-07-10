@@ -7,6 +7,7 @@
 package com.zeroc.gradle.icebuilder.slice
 
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.After
 import org.junit.Before
@@ -28,8 +29,8 @@ class TestCase {
         project = ProjectBuilder.builder()
                 .withProjectDir(temporaryFolder.root)
                 .build()
-        project.pluginManager.apply 'java'
-        project.pluginManager.apply 'slice'
+        project.pluginManager.apply(JavaPlugin)
+        project.pluginManager.apply(SlicePlugin)
 
         slice = project.extensions.getByType(SliceExtension)
     }
