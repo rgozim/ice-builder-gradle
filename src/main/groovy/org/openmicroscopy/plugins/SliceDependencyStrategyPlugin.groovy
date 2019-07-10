@@ -30,21 +30,6 @@ class SliceDependencyStrategyPlugin implements Plugin<Project> {
                 }
             }
 
-            project.dependencies.components.all {
-                allVariants {
-                    withDependencies { deps ->
-                        deps.each { dep ->
-                            if (dep.group == 'com.zeroc') {
-                                dep.version {
-                                    prefer "$slice.iceVersion"
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-
             // Prevents zeroc dependencies having no version in pom
             project.plugins.withType(MavenPublishPlugin) {
                 project.afterEvaluate {
@@ -65,19 +50,19 @@ class SliceDependencyStrategyPlugin implements Plugin<Project> {
         }
     }
 
+    private insertNode(NodeList node, String name, Object value) {
+        Node self = ((Node) node.get(0))
+        List tail = getTail(self)
+        self.parent().appendNode(name, null, value)
+        self.parent().children().addAll(tail)
+    }
+
     private List getTail(Node node) {
         List list = node.parent().children()
         int afterIndex = list.indexOf(node)
         List tail = new ArrayList(list.subList(afterIndex + 1, list.size()))
         list.subList(afterIndex + 1, list.size()).clear()
         return tail
-    }
-
-    private insertNode(NodeList node, String name, Object value) {
-        Node self = ((Node) node.get(0))
-        List tail = getTail(self)
-        self.parent().appendNode(name, null, value)
-        self.parent().children().addAll(tail)
     }
 
 }
